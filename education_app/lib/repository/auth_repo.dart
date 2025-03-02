@@ -1,4 +1,4 @@
-import 'dart:convert';
+// import 'dart:convert';
 
 import 'package:education_app/resources/exports.dart';
 
@@ -26,22 +26,30 @@ class AuthRepository {
     }
   }
 
-  Future<TestSubjectModel?> setSubject() async {
+  Future<CoursesModel?> setSubject() async {
     try {
-      print("Fetching API...");
+      if (kDebugMode) {
+        print("Fetching API...");
+      }
 
       dynamic response = await _apiServices.getGetApiResponse(AppUrl.fetchTest);
 
-      print("Raw API Response: $response"); // Debugging
+      if (kDebugMode) {
+        print("Raw API Response: $response");
+      } // Debugging
 
       if (response is Map<String, dynamic>) {
-        return TestSubjectModel.fromJson(response);
+        return CoursesModel.fromJson(response);
       } else {
-        print("Unexpected response type: ${response.runtimeType}");
+        if (kDebugMode) {
+          print("Unexpected response type: ${response.runtimeType}");
+        }
         return null;
       }
     } catch (error) {
-      print("Error in API: $error");
+      if (kDebugMode) {
+        print("Error in API: $error");
+      }
       return null;
     }
   }

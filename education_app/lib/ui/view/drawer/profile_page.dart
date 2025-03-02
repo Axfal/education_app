@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:education_app/resources/exports.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -30,7 +32,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 80,
-                      backgroundImage: AssetImage('assets/images/profile.png'),
+                      // backgroundImage: AssetImage('assets/images/profile.png'),
                     ),
                     Positioned(
                       bottom: 0,

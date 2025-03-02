@@ -26,7 +26,7 @@ class _SignupScreenState extends State<SignupScreen> {
   void callSubjectApi() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.subjectsList();
+      await authProvider.fetchCoursesList();
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print("Error fetching subjects: $e");
@@ -47,19 +47,19 @@ class _SignupScreenState extends State<SignupScreen> {
       body: Center(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Create Your Account!",
+                  const Text("Create Your Account!",
                       style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87)),
                   SizedBox(height: 10),
-                  Text("Sign up to get started",
+                  const Text("Sign up to get started",
                       style: TextStyle(fontSize: 16, color: Colors.black54)),
                   SizedBox(height: 30),
 
@@ -87,7 +87,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   // Dropdown for Test ID
                   authProvider.loading
                       ? CircularProgressIndicator()
-                      : (authProvider.subjectList == null || authProvider.subjectList!.data == null || authProvider.subjectList!.data!.isEmpty)
+                      : (authProvider.courseList == null || authProvider.courseList!.data == null || authProvider.courseList!.data!.isEmpty)
                       ? Text("No subjects available", style: TextStyle(color: Colors.red))
                       : DropdownButtonFormField<String>(
                     value: selectedTestId,
@@ -96,7 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    items: authProvider.subjectList!.data!.map((subject) {
+                    items: authProvider.courseList!.data!.map((subject) {
                       return DropdownMenuItem(
                         value: subject.id.toString(),
                         child: Text(subject.testName ?? "Unknown"),

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, avoid_print
+
 import 'package:education_app/resources/exports.dart';
 
 class CreateMockTest extends StatefulWidget {
@@ -10,15 +12,39 @@ class CreateMockTest extends StatefulWidget {
 class _CreateMockTestState extends State<CreateMockTest> {
   bool enableTimer = false;
   String? selectedQuestion;
-  // static double? currentValue;
+  Set<String> selectedSubjectIds = {}; // Store selected subject IDs
+  Map<String, String> subjects = {}; // Map of subject ID -> subject name
 
-  final List<String> _subjects = [
-    'English',
-    'Physics',
-    'Chemistry',
-    'Biology',
-    'Analytical Reasoning'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchSubjects();
+  }
+
+  void fetchSubjects() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final int testId = authProvider.userSession!.testId;
+
+      final subjectProvider =
+          Provider.of<SubjectProvider>(context, listen: false);
+      await subjectProvider.setSubjects(testId);
+
+      setState(() {
+        subjects = Map.fromIterables(
+            subjectProvider.subjectId
+                .map((id) => id.toString()), // Convert ID to String
+            subjectProvider.subjects);
+      });
+
+      if (kDebugMode) {
+        print("subjects are ==> $subjects");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   final List<String> _questions = [
     'Unused',
     'Incorrect',
@@ -27,6 +53,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
     'Custom',
     'Standard'
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,7 +168,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
               ),
             ),
           ),
-          Consumer<MockTestProvider>(
+          Consumer<CreateMockTestProvider>(
             builder: (context, provider, child) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -151,20 +178,25 @@ class _CreateMockTestState extends State<CreateMockTest> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ..._subjects.map((subject) {
-                            return ListTile(
-                              leading: Radio<String>(
-                                value: subject,
-                                groupValue: provider.selectedSubject,
-                                onChanged: (value) {
-                                  provider.setSelectedSubject(value!);
-                                },
-                              ),
-                              title: Text(subject),
-                            );
-                          }),
-                        ],
+                        children: subjects.entries.map((entry) {
+                          String subjectId = entry.key;
+                          String subjectName = entry.value;
+                          return ListTile(
+                            leading: Checkbox(
+                              value: selectedSubjectIds.contains(subjectId),
+                              onChanged: (value) {
+                                setState(() {
+                                  if (value == true) {
+                                    selectedSubjectIds.add(subjectId);
+                                  } else {
+                                    selectedSubjectIds.remove(subjectId);
+                                  }
+                                });
+                              },
+                            ),
+                            title: Text(subjectName),
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),
@@ -175,7 +207,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
 
           //number of questions
           ,
-          Consumer<MockTestProvider>(builder: (context, provider, child) {
+          Consumer<CreateMockTestProvider>(builder: (context, provider, child) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Card(
@@ -193,7 +225,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
                             Slider(
                               value: provider.numberOfQuestions.toDouble(),
                               min: 1,
-                              max: 10,
+                              max: 100,
                               divisions: 9,
                               label:
                                   provider.numberOfQuestions.round().toString(),
@@ -215,29 +247,41 @@ class _CreateMockTestState extends State<CreateMockTest> {
               ),
             );
           }),
-          Consumer<MockTestProvider>(builder: (context, provider, child) {
+          Consumer<CreateMockTestProvider>(builder: (context, provider, child) {
             return Align(
               alignment: Alignment.center,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 30.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    if (provider.selectedSubject != null &&
+                    if (selectedSubjectIds.isNotEmpty &&
                         selectedQuestion != null) {
-                      Navigator.pushReplacementNamed(
-                          context, RoutesName.createdMockTestScreen,
+                      try {
+                        List<int> subjectIds = selectedSubjectIds
+                            .map((id) => int.tryParse(id) ?? -1)
+                            .where((id) => id != -1)
+                            .toList();
+                        print("Subjects IDs are these ======>$subjectIds");
+                        Navigator.pushReplacementNamed(
+                          context,
+                          RoutesName.createdMockTestScreen,
                           arguments: {
                             'test_mode': enableTimer,
                             'question_mode': selectedQuestion,
-                            'subject_mode': provider.selectedSubject,
+                            'subject_mode':
+                                subjectIds,
                             'number_of_questions':
                                 provider.numberOfQuestions.toDouble()
-                          });
+                          },
+                        );
+                      } catch (e) {
+                        print("Error converting subject IDs: $e");
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                             content: Text(
-                                "Please select all option before submitting!")),
+                                "Please select all options before submitting!")),
                       );
                     }
                   },

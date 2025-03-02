@@ -1,141 +1,269 @@
-// import 'package:education_app/resources/exports.dart';
-//
-// class MockTestProvider with ChangeNotifier {
-//   List<bool> _showExplanation =
-//       List.generate(mockTextPhysicsQuestions.length, (index) => false);
-//   List<bool> get showExplanation => _showExplanation;
-//
-//   final bool _explanationSwitch = false;
-//   bool get explanationSwitch => _explanationSwitch;
-//
-//   bool _isNxtEnabled = false;
-//   bool get isNxtEnabled => _isNxtEnabled;
-//
-//   int _currentIndex = 0;
-//   int get currentIndex => _currentIndex;
-//
-//   bool _isPrevEnabled = false;
-//   bool get isPrevEnabled => _isPrevEnabled;
-//
-//   List<int?> _selectedOptions =
-//       List<int?>.filled(mockTextPhysicsQuestions.length, null);
-//   List<int?> get selectedOptions => _selectedOptions;
-//
-//   List<bool> _isSubmitted =
-//       List<bool>.filled(mockTextPhysicsQuestions.length, true);
-//   List<bool> get isSubmitted => _isSubmitted;
-//
-//   bool _isTestStarted = false;
-//   bool get isTestStarted => _isTestStarted;
-//
-//   int _timeInSeconds = 30;
-//   int get timeInSeconds => _timeInSeconds;
-//
-//   int _endTime = DateTime.now().millisecondsSinceEpoch + 10000;
-//   int get endTime => _endTime;
-//
-//   bool _shouldNavigate = false;
-//   bool get shouldNavigate => _shouldNavigate;
-//
-//   void onChangeRadio(int index, int? value) {
-//     if (!_isSubmitted[index]) {
-//       _selectedOptions[index] = value;
-//       notifyListeners();
-//     }
-//   }
-//
-//   navigate(BuildContext context) {
-//     if (_shouldNavigate) {
-//       resetProvider();
-//       Navigator.pushReplacementNamed(context, RoutesName.resultScreen);
-//     }
-//     notifyListeners();
-//   }
-//
-//   void submitAnswer(int index) {
-//     if (_selectedOptions[_currentIndex] != null) {
-//       _isSubmitted[index] = true;
-//     }
-//
-//     notifyListeners();
-//   }
-//
-//   void restartTest() {
-//     _selectedOptions = List<int?>.filled(mockTextPhysicsQuestions.length, null);
-//     _isSubmitted = List<bool>.filled(mockTextPhysicsQuestions.length, true);
-//     _showExplanation =
-//         List.generate(mockTextPhysicsQuestions.length, (index) => false);
-//     _isTestStarted = false;
-//     _shouldNavigate = false;
-//     _timeInSeconds = 30;
-//     _currentIndex = 0;
-//     _isPrevEnabled = false;
-//     _isNxtEnabled = false;
-//     notifyListeners();
-//   }
-//
-//   void startTest() {
-//     _isTestStarted = true;
-//     _isPrevEnabled = false;
-//     _isNxtEnabled = true;
-//     _currentIndex = 0;
-//     _timeInSeconds = 30;
-//     _shouldNavigate = true;
-//     _isSubmitted = List<bool>.filled(mockTextPhysicsQuestions.length, false);
-//     _endTime = DateTime.now().millisecondsSinceEpoch + _timeInSeconds * 1000;
-//     notifyListeners();
-//   }
-//
-//   void resetProvider() {
-//     _showExplanation =
-//         List.generate(mockTextPhysicsQuestions.length, (index) => false);
-//     _selectedOptions = List<int?>.filled(mockTextPhysicsQuestions.length, null);
-//     _isSubmitted = List<bool>.filled(mockTextPhysicsQuestions.length, true);
-//     _isTestStarted = false;
-//     _isNxtEnabled = false;
-//     _timeInSeconds = 30;
-//     _isPrevEnabled = false;
-//     _currentIndex = 0;
-//     _shouldNavigate = false;
-//     _endTime = DateTime.now().millisecondsSinceEpoch + _timeInSeconds * 1000;
-//     notifyListeners();
-//   }
-//
-//   void goToNext() {
-//     if (_currentIndex < mockTextPhysicsQuestions.length - 1) {
-//       _currentIndex++;
-//       _isPrevEnabled = true;
-//       if (_currentIndex == mockTextPhysicsQuestions.length - 1) {
-//         _isNxtEnabled = false;
-//       } else {
-//         _isNxtEnabled = true;
-//       }
-//     } else {
-//       _isNxtEnabled = false;
-//     }
-//     notifyListeners();
-//   }
-//
-//   void goToPrevious() {
-//     if (_currentIndex > 0) {
-//       _currentIndex--;
-//       _isNxtEnabled = true;
-//       if (_currentIndex == 0) {
-//         _isPrevEnabled = false;
-//       } else {
-//         _isPrevEnabled = true;
-//       }
-//     } else {
-//       _isPrevEnabled = false;
-//     }
-//     notifyListeners();
-//   }
-//
-//   void toggleExplanationSwitch(value) {
-//     if (_selectedOptions[_currentIndex] != null &&
-//         _isSubmitted[_currentIndex]) {
-//       _showExplanation[_currentIndex] = value;
-//     }
-//     notifyListeners();
-//   }
-// }
+import 'package:education_app/resources/exports.dart';
+
+class MockTestProvider with ChangeNotifier {
+  final QuestionRepository _mockTestRepo = QuestionRepository();
+
+  MockTestModel? _questions;
+  MockTestModel? get questions => _questions;
+
+  String? _subject;
+  String? get subject => _subject;
+
+  List<Question> _questionList = [];
+  List<Question> get questionList => _questionList;
+
+  final Map<String, int> correctOptionMapping = {
+    "a": 0,
+    "b": 1,
+    "c": 2,
+    "d": 3
+  };
+
+  int? _numberOfQuestions;
+  int? get numberOfQuestions => _numberOfQuestions;
+
+  List<bool> _isSubmitted = [];
+  List<bool> get isSubmitted => _isSubmitted;
+
+  int _correctAns = 0;
+  int get correctAns => _correctAns;
+
+  int _incorrectAns = 0;
+  int get incorrectAns => _incorrectAns;
+
+  bool _loading = false;
+  bool get loading => _loading;
+
+  bool _isTestStarted = false;
+  bool get isTestStarted => _isTestStarted;
+
+  List<int?> _selectedOptions = [];
+  List<int?> get selectedOptions => _selectedOptions;
+
+  List<bool> _showExplanation = [];
+  List<bool> get showExplanation => _showExplanation;
+
+  final bool _explanationSwitch = false;
+  bool get explanationSwitch => _explanationSwitch;
+
+  bool _isNxtEnabled = false;
+  bool get isNxtEnabled => _isNxtEnabled;
+
+  int _currentIndex = 0;
+  int get currentIndex => _currentIndex;
+
+  bool _isPrevEnabled = false;
+  bool get isPrevEnabled => _isPrevEnabled;
+
+  bool _shouldNavigate = false;
+  bool get shouldNavigate => _shouldNavigate;
+
+  void goBack() {
+    restartTest();
+    notifyListeners();
+  }
+
+  void onChangeRadio(int index, int? value) {
+    if (_isSubmitted.isNotEmpty &&
+        index < _isSubmitted.length &&
+        !_isSubmitted[index]) {
+      if (_selectedOptions.isNotEmpty && index < _selectedOptions.length) {
+        _selectedOptions[index] = value;
+      }
+      notifyListeners();
+    }
+  }
+
+  navigate(BuildContext context) {
+    if (_shouldNavigate) {
+      _isTestStarted = false;
+      final _provider = Provider.of<ChapterProvider>(context, listen: false);
+      _subject = _provider.subject;
+      Navigator.pushReplacementNamed(context, RoutesName.resultScreen,
+          arguments: {
+            'subject': _subject,
+            'correctAns': _correctAns,
+            'incorrectAns': _incorrectAns,
+            'totalQuestion': _numberOfQuestions
+          });
+    }
+    notifyListeners();
+  }
+
+  Future<void> fetchQuestions(BuildContext context) async {
+    try {
+      _loading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userSession?.userId ?? 0;
+      Map<String, dynamic> data = {};
+      if (authProvider.userSession?.userType == "premium") {
+        data = {'user_id': userId, "status": "mock"};
+      } else if (authProvider.userSession?.userType == "free") {
+        data = {'user_id': userId};
+      } else {
+        data = {};
+      }
+
+      if (kDebugMode) {
+        print(userId);
+      }
+
+      final response = await _mockTestRepo.fetchQuestions(data);
+
+      if (response.success == true && response.questions.isNotEmpty) {
+        _questions = response;
+        _questionList = _questions!.questions;
+        _numberOfQuestions = _questionList.length;
+        _selectedOptions = List<int?>.filled(_questionList.length, null);
+        _isSubmitted = List<bool>.filled(_questionList.length, false);
+        _showExplanation = List<bool>.filled(_questionList.length, false);
+      }
+    } catch (error) {
+      if (kDebugMode) {
+        print("Error fetching questions: $error");
+      }
+      _questions = null;
+      _questionList = [];
+      _numberOfQuestions = 0;
+    } finally {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loading = false;
+        notifyListeners();
+      });
+    }
+  }
+
+  void submitAnswer(BuildContext context, int index) {
+    if (_selectedOptions.isNotEmpty &&
+        index < _selectedOptions.length &&
+        _selectedOptions[index] != null) {
+      if (_isSubmitted.isNotEmpty && index < _isSubmitted.length) {
+        _isSubmitted[index] = true;
+      }
+
+      if (_questionList.isNotEmpty && index < _questionList.length) {
+        String correctAnswerKey =
+            _questionList[index].correctAnswer.toLowerCase();
+        int? correctAnswerIndex = correctOptionMapping[correctAnswerKey];
+
+        if (_selectedOptions[index] == correctAnswerIndex) {
+          _correctAns++;
+        } else {
+          _incorrectAns++;
+        }
+      }
+
+      bool allSubmitted = _isSubmitted.every((submitted) => submitted == true);
+
+      if (allSubmitted) {
+        Future.microtask(() {
+          Navigator.pushReplacementNamed(
+            context,
+            RoutesName.resultScreen,
+            arguments: {
+              'correctAns': _correctAns,
+              'incorrectAns': _incorrectAns,
+              'totalQuestion': _numberOfQuestions
+            },
+          );
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select an option before submitting!"),
+        ),
+      );
+    }
+
+    notifyListeners();
+  }
+
+  void restartTest() {
+    resetProvider();
+    notifyListeners();
+  }
+
+  void startTest() {
+    if (_questionList.isEmpty) {
+      if (kDebugMode) {
+        print("Error: Cannot start test, question list is empty!");
+      }
+      return;
+    }
+
+    _isTestStarted = true;
+    _isPrevEnabled = false;
+    _isNxtEnabled = true;
+    _currentIndex = 0;
+    _correctAns = 0;
+    _incorrectAns = 0;
+    _shouldNavigate = true;
+
+    _isSubmitted = List<bool>.filled(_questionList.length, false);
+    _selectedOptions = List<int?>.filled(_questionList.length, null);
+    _showExplanation = List.generate(_questionList.length, (_) => false);
+
+    notifyListeners();
+  }
+
+  void resetProvider() {
+    _correctAns = 0;
+    _incorrectAns = 0;
+
+    if (_numberOfQuestions != null && _numberOfQuestions! > 0) {
+      _isSubmitted = List<bool>.filled(_numberOfQuestions!, false);
+      _showExplanation = List.generate(_numberOfQuestions!, (_) => false);
+      _selectedOptions = List<int?>.filled(_numberOfQuestions!, null);
+    }
+
+    _isTestStarted = false;
+    _isNxtEnabled = false;
+    _numberOfQuestions = 10;
+    _isPrevEnabled = false;
+    _currentIndex = 0;
+    _shouldNavigate = false;
+
+    notifyListeners();
+  }
+
+  void goToNext() {
+    print("_currentIndex= $_currentIndex");
+    if (_numberOfQuestions != null &&
+        _currentIndex < (_numberOfQuestions! - 1)) {
+      _currentIndex++;
+      _isPrevEnabled = true;
+      _isNxtEnabled = _currentIndex < (_numberOfQuestions! - 1);
+    } else {
+      _isNxtEnabled = false;
+    }
+    notifyListeners();
+  }
+
+  void goToPrevious() {
+    if (_currentIndex > 0) {
+      _currentIndex--;
+      _isNxtEnabled = true;
+      _isPrevEnabled = _currentIndex > 0;
+    } else {
+      _isPrevEnabled = false;
+    }
+    notifyListeners();
+  }
+
+  void toggleExplanationSwitch(bool value) {
+    if (_selectedOptions.isNotEmpty &&
+        _currentIndex < _selectedOptions.length &&
+        _selectedOptions[_currentIndex] != null &&
+        _isSubmitted.isNotEmpty &&
+        _currentIndex < _isSubmitted.length &&
+        _isSubmitted[_currentIndex]) {
+      _showExplanation[_currentIndex] = value;
+    }
+    notifyListeners();
+  }
+}

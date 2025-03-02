@@ -1,16 +1,16 @@
 // import 'package:education_app/resources/exports.dart';
 
-class CourseModel {
+class CoursesModel {
   final String title;
   final String description;
   final String image;
 
-  CourseModel(
+  CoursesModel(
       {required this.image, required this.title, required this.description});
 }
 
-List<CourseModel> courses = <CourseModel>[
-  CourseModel(
+List<CoursesModel> courses = <CoursesModel>[
+  CoursesModel(
       image: 'assets/images/mdcat.png',
       title: 'title',
       description: 'description')

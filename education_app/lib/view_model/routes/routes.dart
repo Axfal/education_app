@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:education_app/resources/exports.dart';
 
 class Routes {
@@ -16,13 +18,26 @@ class Routes {
         return MaterialPageRoute(builder: (context) => HomeScreen());
 
       case RoutesName.course:
-        return MaterialPageRoute(builder: (context) => CourseScreen());
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final courseId = args['courseId'] ?? 0;
+        return MaterialPageRoute(
+            builder: (context) => CourseScreen(courseId: courseId));
 
       case RoutesName.setting:
         return MaterialPageRoute(builder: (context) => SettingsScreen());
 
+      case RoutesName.subscriptionScreen:
+        return MaterialPageRoute(builder: (context) => SubscriptionScreen());
+
       case RoutesName.mockTest:
-        return MaterialPageRoute(builder: (context) => MockTestScreen());
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final subjectId = args['subjectId'] ?? 0;
+        final chapterId = args['chapterId'] ?? 0;
+        return MaterialPageRoute(
+            builder: (context) => MockTestScreen(
+                  subjectId: subjectId,
+                  chapterId: chapterId,
+                ));
 
       case RoutesName.profile:
         return MaterialPageRoute(builder: (context) => ProfilePage());
@@ -36,29 +51,47 @@ class Routes {
       case RoutesName.previousTestScreen:
         return MaterialPageRoute(builder: (context) => PreviousTestScreen());
 
+      case RoutesName.subjectScreen:
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final courseId = args['courseId'] ?? 0;
+        return MaterialPageRoute(
+            builder: (context) => SubjectScreen(courseId: courseId));
+
       case RoutesName.resultScreen:
         final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final subject = args['subject'] ?? 'Demo';
         final correctAnswer = args['correctAns'] ?? 0;
         final incorrectAnswer = args['incorrectAns'] ?? 0;
         final totalQuestion = args['totalQuestion'] ?? 0;
         return MaterialPageRoute(
             builder: (context) => ResultScreen(
-              correctAns: correctAnswer,
-              incorrectAns: incorrectAnswer,
-              totalQues: totalQuestion,
-            ));
+                  subject: subject,
+                  correctAns: correctAnswer,
+                  incorrectAns: incorrectAnswer,
+                  totalQues: totalQuestion,
+                ));
 
       case RoutesName.chapterScreen:
         return MaterialPageRoute(builder: (context) => ChaptersScreen());
 
       case RoutesName.questionScreen:
-        return MaterialPageRoute(builder: (context) => QuestionScreen());
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final subjectId = args['subjectId'] ?? 0;
+        final chapterId = args['chapterId'] ?? 0;
+        return MaterialPageRoute(
+            builder: (context) => QuestionScreen(
+                  subjectId: subjectId,
+                  chapterId: chapterId,
+                ));
 
       case RoutesName.createdMockTestScreen:
         final args = settings.arguments as Map<String, dynamic>? ?? {};
         final numberOfQuestions = args['number_of_questions'] as double? ?? 1.0;
         final testMode = args['test_mode'] as bool? ?? false;
-        final subjectMode = args['subject_mode'] as String? ?? 'default';
+        final subjectMode = (args['subject_mode'] as List<dynamic>?)
+                ?.map((e) => e as int)
+                .toList() ??
+            [];
         final questionMode = args['question_mode'] as String? ?? 'default';
 
         return MaterialPageRoute(

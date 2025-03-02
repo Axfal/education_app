@@ -13,7 +13,7 @@ Widget reusableButton(String title, VoidCallback onTap) => InkWell(
             borderRadius: BorderRadius.circular(20.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: Colors.black.withOpacity(0.3),
                 spreadRadius: 2,
                 blurRadius: 8,
                 offset: Offset(0, 4),

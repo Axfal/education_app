@@ -1,7 +1,9 @@
-
 import '../../resources/exports.dart';
 
-Widget SubjectTitleScreen({required String title, required String image,required VoidCallback onTap}) {
+Widget SubjectTitleScreen(
+    {required String title,
+    required String image,
+    required VoidCallback onTap}) {
   return InkWell(
     onTap: onTap,
     child: Container(
@@ -14,7 +16,7 @@ Widget SubjectTitleScreen({required String title, required String image,required
         // ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: Offset(0, 4),

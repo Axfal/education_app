@@ -1,9 +1,11 @@
+// ignore_for_file: prefer_const_constructors, avoid_print
+
 import 'package:education_app/resources/exports.dart';
 
 class CreatedMockTestScreen extends StatefulWidget {
   final bool testMode;
   final String questionMode;
-  final String subjectMode;
+  final List<int> subjectMode;
   final double numberOfQuestions;
 
   const CreatedMockTestScreen({
@@ -15,24 +17,66 @@ class CreatedMockTestScreen extends StatefulWidget {
   });
 
   @override
-  _CreatedMockTestScreenState createState() => _CreatedMockTestScreenState();
+  CreatedMockTestScreenState createState() => CreatedMockTestScreenState();
 }
 
-class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
-  late MockTestProvider provider;
+class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
+  // late MockTestsProvider provider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // if (kDebugMode){
-      //   print("widget.numberOfQuestions = ${widget.numberOfQuestions}");
-      // }
-      final provider = Provider.of<MockTestProvider>(context, listen: false);
-      provider.setSelectedSubject(widget.subjectMode);
-      provider.setNumberOfQuestion(widget.numberOfQuestions);
-
+      getQuestions();
     });
+  }
+
+  void getQuestions() async {
+    final provider =
+        Provider.of<CreateMockTestProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final subjectProvider =
+        Provider.of<SubjectProvider>(context, listen: false);
+
+    if (!mounted) return;
+
+    final userId = authProvider.userSession?.userId;
+    final testId = subjectProvider.testId;
+
+    if (userId == null) {
+      print("❌ ERROR: User ID is null! Cannot fetch questions.");
+      return;
+    }
+
+    print("🔍 Fetching Questions for:");
+    print("👤 User ID: $userId");
+    print("📝 Test ID: $testId");
+    print("📚 Subject Mode: ${widget.subjectMode}");
+    print("🔢 Number of Questions: ${widget.numberOfQuestions}");
+
+    Map<String, dynamic> data = {
+      "user_id": userId,
+      "test_id": testId,
+      "subject_id": widget.subjectMode,
+      "no_of_question": widget.numberOfQuestions.toInt()
+    };
+
+    await provider.getQuestions(context, data);
+  }
+
+  // Add this helper method to remove HTML tags
+  String removeHtmlTags(String? htmlText) {
+    if (htmlText == null) return '';
+
+    // First, decode HTML entities
+    var text = htmlText
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>');
+
+    // Then remove HTML tags
+    return text.replaceAll(RegExp(r'<[^>]*>'), '');
   }
 
   @override
@@ -46,52 +90,37 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
         ),
         centerTitle: true,
         backgroundColor: AppColors.primaryColor,
-        // actions: [
-        //   PopupMenuButton<String>(
-        //     icon: Icon(
-        //       Icons.more_vert,
-        //     ),
-        //     onSelected: (value) {
-        //       if (value == 'Feedback') {
-        //         print('Option 1 selected');
-        //       }
-        //     },
-        //     itemBuilder: (BuildContext context) {
-        //       return [
-        //         PopupMenuItem(
-        //           value: 'Feedback',
-        //           child: Text('Feedback'),
-        //         ),
-        //       ];
-        //     },
-        //   ),
-        //   SizedBox(
-        //     width: 5,
-        //   )
-        // ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Consumer<MockTestProvider>(
+        child: Consumer<CreateMockTestProvider>(
           builder: (context, provider, child) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 20,),
-                const SizedBox(height: 10),
-                if (!provider.isTestStarted) _buildStartTestSection(provider),
-                if (provider.isTestStarted) _buildTestControls(provider),
-                const SizedBox(height: 10),
-                _buildQuestionCard(provider),
-              ],
-            );
+            if (provider.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (provider.questionList.isEmpty) {
+              return const Center(
+                  child: Text("No questions available. Please try again."));
+            } else {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  if (!provider.isTestStarted) _buildStartTestSection(provider),
+                  if (provider.isTestStarted) _buildTestControls(provider),
+                  const SizedBox(height: 10),
+                  _buildQuestionCard(provider),
+                ],
+              );
+            }
           },
         ),
       ),
     );
   }
 
-  Widget _buildStartTestSection(MockTestProvider provider) {
+  Widget _buildStartTestSection(CreateMockTestProvider provider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -116,7 +145,7 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
     );
   }
 
-  Widget _buildTestControls(MockTestProvider provider) {
+  Widget _buildTestControls(CreateMockTestProvider provider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -139,7 +168,25 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
     );
   }
 
-  Widget _buildQuestionCard(MockTestProvider provider) {
+  Widget _buildQuestionCard(CreateMockTestProvider provider) {
+    if (provider.questionList.isEmpty) {
+      return const Expanded(
+        child: Center(
+          child: Text('No questions available'),
+        ),
+      );
+    }
+
+    if (provider.currentIndex >= provider.questionList.length) {
+      return const Expanded(
+        child: Center(
+          child: Text('Invalid question index'),
+        ),
+      );
+    }
+
+    final currentQuestion = provider.questionList[provider.currentIndex];
+
     return Expanded(
       child: Card(
         elevation: 4,
@@ -151,30 +198,88 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
           child: ListView(
             children: [
               Text(
-                "${provider.currentIndex + 1}) ${provider.selectSubject[provider.currentIndex].question}",
+                "${provider.currentIndex + 1}) ${removeHtmlTags(currentQuestion.question)}",
                 style: AppTextStyle.questionText,
               ),
               const SizedBox(height: 10),
-              ...List.generate(
-                provider.selectSubject[provider.currentIndex].options.length,
-                (optionIndex) => ListTile(
-                  title: Text(
-                    provider.selectSubject[provider.currentIndex]
-                        .options[optionIndex],
-                    style: AppTextStyle.answerText,
-                  ),
-                  leading: Radio<int>(
-                    value: optionIndex,
-                    groupValue: provider.selectedOptions[provider.currentIndex],
-                    onChanged: provider.isSubmitted[provider.currentIndex]
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              provider.onChangeRadio(
-                                  provider.currentIndex, value);
-                            }
-                          },
-                  ),
+              ListTile(
+                title: Text(
+                    removeHtmlTags(currentQuestion.option1)
+                        .replaceAll(RegExp(r'[a-d]\)'), '')
+                        .trim(),
+                    style: AppTextStyle.answerText),
+                leading: Radio<int>(
+                  value: 0,
+                  groupValue: provider.selectedOptions[provider.currentIndex],
+                  onChanged: provider.isTestStarted &&
+                          !provider.isSubmitted[provider.currentIndex]
+                      ? (value) {
+                          if (value != null) {
+                            provider.onChangeRadio(
+                                provider.currentIndex, value);
+                          }
+                        }
+                      : null,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                    removeHtmlTags(currentQuestion.option2)
+                        .replaceAll(RegExp(r'[a-d]\)'), '')
+                        .trim(),
+                    style: AppTextStyle.answerText),
+                leading: Radio<int>(
+                  value: 1,
+                  groupValue: provider.selectedOptions[provider.currentIndex],
+                  onChanged: provider.isTestStarted &&
+                          !provider.isSubmitted[provider.currentIndex]
+                      ? (value) {
+                          if (value != null) {
+                            provider.onChangeRadio(
+                                provider.currentIndex, value);
+                          }
+                        }
+                      : null,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                    removeHtmlTags(currentQuestion.option3)
+                        .replaceAll(RegExp(r'[a-d]\)'), '')
+                        .trim(),
+                    style: AppTextStyle.answerText),
+                leading: Radio<int>(
+                  value: 2,
+                  groupValue: provider.selectedOptions[provider.currentIndex],
+                  onChanged: provider.isTestStarted &&
+                          !provider.isSubmitted[provider.currentIndex]
+                      ? (value) {
+                          if (value != null) {
+                            provider.onChangeRadio(
+                                provider.currentIndex, value);
+                          }
+                        }
+                      : null,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                    removeHtmlTags(currentQuestion.option4)
+                        .replaceAll(RegExp(r'[a-d]\)'), '')
+                        .trim(),
+                    style: AppTextStyle.answerText),
+                leading: Radio<int>(
+                  value: 3,
+                  groupValue: provider.selectedOptions[provider.currentIndex],
+                  onChanged: provider.isTestStarted &&
+                          !provider.isSubmitted[provider.currentIndex]
+                      ? (value) {
+                          if (value != null) {
+                            provider.onChangeRadio(
+                                provider.currentIndex, value);
+                          }
+                        }
+                      : null,
                 ),
               ),
               const SizedBox(height: 10),
@@ -188,7 +293,7 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
     );
   }
 
-  Widget _buildNavigationButtons(MockTestProvider provider) {
+  Widget _buildNavigationButtons(CreateMockTestProvider provider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -236,20 +341,18 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
     );
   }
 
-  Widget _buildExplanation(MockTestProvider provider) {
+  Widget _buildExplanation(CreateMockTestProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(height: 20),
         ElevatedButton(
           onPressed: () => showFeedbackDialog(
-              context, (provider.currentIndex + 1), provider.selectedSubject!),
+              context, (provider.currentIndex + 1), 'Created Mock Test'),
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: AppColors.primaryColor,
-            padding: EdgeInsets.symmetric(
-              horizontal: 90,
-                vertical: 15),
+            padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
             textStyle: TextStyle(fontSize: 18),
           ),
           child: Text('Feedback'),
@@ -270,13 +373,17 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
         if (provider.showExplanation[provider.currentIndex] &&
             provider.isSubmitted[provider.currentIndex])
           Text(
-            provider.selectSubject[provider.currentIndex].detail,
+            removeHtmlTags(
+                    provider.questionList[provider.currentIndex].detail) ??
+                "No explanation available.",
             style: AppTextStyle.answerText,
           ),
       ],
     );
   }
-  void showFeedbackDialog(BuildContext context, int questionNum, String selectSubject ) {
+
+  void showFeedbackDialog(
+      BuildContext context, int questionNum, String selectSubject) {
     final formKey = GlobalKey<FormState>();
     TextEditingController feedbackController = TextEditingController();
 
@@ -323,7 +430,7 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
                     backgroundColor: AppColors.primaryColor,
                   ),
                   child:
-                  Text('Submit', style: AppTextStyle.subscriptionTitleText),
+                      Text('Submit', style: AppTextStyle.subscriptionTitleText),
                 ),
               ],
             ),
@@ -332,5 +439,4 @@ class _CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
       ),
     );
   }
-
 }

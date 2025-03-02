@@ -1,7 +1,5 @@
 import 'package:education_app/resources/exports.dart';
 
-
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -23,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Form(
             key: _formKey,
             child: Column(
@@ -31,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Image(
                     image: AssetImage("assets/images/login.png"), height: 200),
-                Text(
+                const Text(
                   "Welcome Back!",
                   style: TextStyle(
                       fontSize: 28,
@@ -39,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.black87),
                 ),
                 SizedBox(height: 10),
-                Text(
+                const Text(
                   "Login to continue",
                   style: TextStyle(fontSize: 16, color: Colors.black54),
                 ),
@@ -125,8 +123,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                     },
                     child: authProvider.loading
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text(
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
                             "Login",
                             style: TextStyle(
                                 fontSize: 18,

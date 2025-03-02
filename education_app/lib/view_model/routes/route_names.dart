@@ -13,6 +13,8 @@ class RoutesName {
 
   static const String mockTest = "mock_test_screen";
 
+  static const String subscriptionScreen = "mock_test_screen";
+
   static const String profile = "profile_screen";
 
   static const String createMockTest = "create_mock_test_screen";
@@ -24,6 +26,8 @@ class RoutesName {
   static const String resultScreen = "result_screen";
 
   static const String noteScreen = "note_screen";
+
+  static const String subjectScreen = "subject_screen";
 
   static const String previousTestScreen = "previous_test_screen";
 

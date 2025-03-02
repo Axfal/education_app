@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:education_app/resources/exports.dart';
 
 class NoteScreen extends StatefulWidget {
@@ -8,10 +10,6 @@ class NoteScreen extends StatefulWidget {
 }
 
 class _NoteScreenState extends State<NoteScreen> {
-  // void _dispose() {
-  //   titleController.dispose();
-  //   descriptionController.dispose();
-  // }
 
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -27,7 +25,11 @@ class _NoteScreenState extends State<NoteScreen> {
           valueListenable: Boxes.getData().listenable(),
           builder: (context, box, _) {
             var data = box.values.toList().cast<NotesModel>();
-            return ListView.builder(
+            if(data.isEmpty){
+              return
+                  Center(child: Text('Notes List is Empty'));
+            }else {
+              return ListView.builder(
                 itemCount: box.length,
                 reverse: true,
                 shrinkWrap: true,
@@ -47,7 +49,7 @@ class _NoteScreenState extends State<NoteScreen> {
                                 children: [
                                   Text(data[index].title.toString(),
                                       style: AppTextStyle.profileTitleText),
-                                  Spacer(),
+                                  const Spacer(),
                                   IconButton(
                                       onPressed: () {
                                         _update(
@@ -74,6 +76,7 @@ class _NoteScreenState extends State<NoteScreen> {
                     ),
                   );
                 });
+            }
           }),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

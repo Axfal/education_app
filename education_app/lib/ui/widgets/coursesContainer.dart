@@ -16,7 +16,7 @@ Widget CoursesContainer(
                 borderRadius: BorderRadius.circular(16.0),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withOpacity(0.3),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: Offset(0, 4),
@@ -29,10 +29,6 @@ Widget CoursesContainer(
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16.0),
-                      // image: DecorationImage(
-                        // image: AssetImage(image), // Ensure this path is correct
-                        // fit: BoxFit.fill,
-                      // ),
                     ),
                   ),
 

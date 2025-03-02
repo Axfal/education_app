@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:education_app/resources/exports.dart';
@@ -10,11 +11,12 @@ class NetworkApiServices extends BaseApiServices {
 
     try {
       final response =
-          await http.get(Uri.parse(url)).timeout(Duration(seconds: 20));
-
+      await http.get(Uri.parse(url)).timeout(Duration(seconds: 20));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException("No Internet Connection");
+    } on TimeoutException {
+      throw FetchDataException("Request Timed Out. Try Again.");
     }
 
     return responseJson;
@@ -24,51 +26,55 @@ class NetworkApiServices extends BaseApiServices {
   Future<dynamic> getPostApiResponse(String url, dynamic data) async {
     try {
       if (kDebugMode) {
+        print("🔵 Requesting API...");
         print("URL: $url");
-      }
-      if (kDebugMode) {
         print("Request Data: ${jsonEncode(data)}");
       }
 
-      final response = await http.post(
+      final response = await http
+          .post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
         body: jsonEncode(data),
-      ).timeout(Duration(seconds: 10));
+      )
+          .timeout(const Duration(seconds: 20)); // Increased timeout
 
       if (kDebugMode) {
-        print("Response Status: ${response.statusCode}");
-      }
-      if (kDebugMode) {
-        print("Response Body: ${response.body}");
+        print("✅ Response Status: ${response.statusCode}");
+        print("✅ Response Body: ${response.body}");
       }
 
-      return jsonDecode(response.body);
+      return returnResponse(response); // Use response handler
+    } on SocketException {
+      throw FetchDataException("No Internet Connection");
+    } on TimeoutException {
+      throw FetchDataException("API Timeout: The request took too long!");
     } catch (error) {
       if (kDebugMode) {
-        print("API Error: $error");
+        print("❌ API Error: $error");
       }
-      throw Exception("API error: $error");
+      throw Exception("API error: ${error.toString()}");
     }
   }
-
-
 
   dynamic returnResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
-        dynamic responseJson = jsonDecode(response.body);
-        return responseJson;
+        return jsonDecode(response.body);
       case 400:
         throw BadRequestException(response.body.toString());
-      case 404:
+      case 401:
+      case 403:
         throw UnauthorisedException(response.body.toString());
+      case 404:
+        throw FetchDataException("API Not Found: ${response.body}");
+      case 500:
       default:
         throw FetchDataException(
-            "Error Occurred While Communicating With Server with status code ${response.statusCode}");
+            "Server Error: ${response.statusCode}, ${response.body}");
     }
   }
 }
