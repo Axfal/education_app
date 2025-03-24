@@ -1,5 +1,5 @@
 import 'package:education_app/resources/exports.dart';
-
+import 'package:no_screenshot/no_screenshot.dart';
 class CourseScreen extends StatefulWidget {
   final courseId;
   const CourseScreen({super.key,required this.courseId});
@@ -9,10 +9,17 @@ class CourseScreen extends StatefulWidget {
 }
 
 class _CourseScreenState extends State<CourseScreen> {
+  final NoScreenshot _noScreenshot = NoScreenshot.instance;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _noScreenshot.screenshotOn();
+  }
+
   @override
   Widget build(BuildContext context) {
     MockTestProvider provider = Provider.of<MockTestProvider>(context);
-    // final courseProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return DefaultTabController(
       length: 2,
@@ -31,7 +38,7 @@ class _CourseScreenState extends State<CourseScreen> {
           bottom: TabBar(
             tabs: const [
               Tab(icon: Icon(Icons.school), text: 'Subjects'),
-              Tab(icon: Icon(Icons.quiz), text: 'Mock Test'),
+              Tab(icon: Icon(Icons.quiz), text: 'General Test'),
             ],
             labelColor: AppColors.primaryColor,
             indicatorColor: AppColors.primaryColor,
@@ -40,7 +47,7 @@ class _CourseScreenState extends State<CourseScreen> {
         body: TabBarView(
           children: [
             SubjectScreen(courseId: widget.courseId,),
-            const MockTestScreen(),
+            MockTestScreen(),
           ],
         ),
       ),

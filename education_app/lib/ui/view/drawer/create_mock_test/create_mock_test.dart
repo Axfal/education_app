@@ -12,8 +12,8 @@ class CreateMockTest extends StatefulWidget {
 class _CreateMockTestState extends State<CreateMockTest> {
   bool enableTimer = false;
   String? selectedQuestion;
-  Set<String> selectedSubjectIds = {}; // Store selected subject IDs
-  Map<String, String> subjects = {}; // Map of subject ID -> subject name
+  Set<String> selectedSubjectIds = {};
+  Map<String, String> subjects = {};
 
   @override
   void initState() {
@@ -32,8 +32,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
 
       setState(() {
         subjects = Map.fromIterables(
-            subjectProvider.subjectId
-                .map((id) => id.toString()), // Convert ID to String
+            subjectProvider.subjectId.map((id) => id.toString()),
             subjectProvider.subjects);
       });
 
@@ -46,12 +45,10 @@ class _CreateMockTestState extends State<CreateMockTest> {
   }
 
   final List<String> _questions = [
-    'Unused',
-    'Incorrect',
-    'Marked',
-    'All',
-    'Custom',
-    'Standard'
+    'unused',
+    'incorrect',
+    'marked',
+    'all',
   ];
 
   @override
@@ -70,236 +67,243 @@ class _CreateMockTestState extends State<CreateMockTest> {
             },
             icon: Icon(Icons.arrow_back, color: AppColors.textColor)),
       ),
-      body: ListView(
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10.0, bottom: 10),
-              child: Text('Please select options to generate mock test.',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  )),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Card(
-              child: ExpansionTile(
-                title: Text('Test Mode'),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 10),
-                    child: Column(
+      body: subjects.isEmpty
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : ListView(
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10.0, bottom: 10),
+                    child: Text('Please select options to generate mock test.',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        )),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Card(
+                    child: ExpansionTile(
+                      title: Text('Test Mode'),
                       children: [
-                        ListTile(
-                          title: Text(
-                            'Tutor',
-                            style: AppTextStyle.profileTitleText,
-                          ),
-                          trailing: Switch(
-                            activeColor: AppColors.primaryColor,
-                            value: !enableTimer,
-                            onChanged: (value) {
-                              setState(() {
-                                enableTimer = !value;
-                              });
-                            },
-                          ),
-                        ),
-                        ListTile(
-                          title: Text(
-                            'Timed',
-                            style: AppTextStyle.profileTitleText,
-                          ),
-                          trailing: Switch(
-                            activeColor: AppColors.primaryColor,
-                            value: enableTimer,
-                            onChanged: (value) {
-                              setState(() {
-                                enableTimer = value;
-                              });
-                            },
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 10),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                title: Text(
+                                  'Tutor',
+                                  style: AppTextStyle.profileTitleText,
+                                ),
+                                trailing: Switch(
+                                  activeColor: AppColors.primaryColor,
+                                  value: !enableTimer,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      enableTimer = !value;
+                                    });
+                                  },
+                                ),
+                              ),
+                              ListTile(
+                                title: Text(
+                                  'Timed',
+                                  style: AppTextStyle.profileTitleText,
+                                ),
+                                trailing: Switch(
+                                  activeColor: AppColors.primaryColor,
+                                  value: enableTimer,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      enableTimer = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Card(
-              child: ExpansionTile(
-                title: Text('Question Mode'),
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ..._questions.map((question) => ListTile(
-                            leading: Radio<String>(
-                              value: question,
-                              groupValue: selectedQuestion,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedQuestion = value;
-                                });
-                              },
-                            ),
-                            title: Row(
-                              children: [
-                                Text(
-                                  question,
-                                  // style: AppTextStyle.profileSubTitleText,
-                                ),
-                                SizedBox(
-                                  width: 10,
-                                ),
-                                numIcon('445')
-                              ],
-                            ),
-                          )),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Consumer<CreateMockTestProvider>(
-            builder: (context, provider, child) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Card(
-                  child: ExpansionTile(
-                    title: Text('Subjects Mode'),
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: subjects.entries.map((entry) {
-                          String subjectId = entry.key;
-                          String subjectName = entry.value;
-                          return ListTile(
-                            leading: Checkbox(
-                              value: selectedSubjectIds.contains(subjectId),
-                              onChanged: (value) {
-                                setState(() {
-                                  if (value == true) {
-                                    selectedSubjectIds.add(subjectId);
-                                  } else {
-                                    selectedSubjectIds.remove(subjectId);
-                                  }
-                                });
-                              },
-                            ),
-                            title: Text(subjectName),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
                 ),
-              );
-            },
-          )
-
-          //number of questions
-          ,
-          Consumer<CreateMockTestProvider>(builder: (context, provider, child) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Card(
-                child: ExpansionTile(
-                  title: Text('Number of Questions'),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 2),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                Consumer<CreateMockTestProvider>(
+                  builder: (context, provider, child) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Card(
+                        child: ExpansionTile(
+                          title: Text('Subjects Mode'),
                           children: [
-                            Slider(
-                              value: provider.numberOfQuestions.toDouble(),
-                              min: 1,
-                              max: 100,
-                              divisions: 9,
-                              label:
-                                  provider.numberOfQuestions.round().toString(),
-                              onChanged: (value) {
-                                provider.setNumberOfQuestion(value);
-                              },
-                            ),
-                            SizedBox(height: 8.0),
-                            Text(
-                              'Selected: ${provider.numberOfQuestions.round()} questions',
-                              // style: AppTextStyle.profileSubTitleText
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: subjects.entries.map((entry) {
+                                String subjectId = entry.key;
+                                String subjectName = entry.value;
+                                return ListTile(
+                                  leading: Checkbox(
+                                    activeColor: AppColors.primaryColor,
+                                    value:
+                                        selectedSubjectIds.contains(subjectId),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          selectedSubjectIds.add(subjectId);
+                                        } else {
+                                          selectedSubjectIds.remove(subjectId);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  title: Text(subjectName),
+                                );
+                              }).toList(),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-          Consumer<CreateMockTestProvider>(builder: (context, provider, child) {
-            return Align(
-              alignment: Alignment.center,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 30.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (selectedSubjectIds.isNotEmpty &&
-                        selectedQuestion != null) {
-                      try {
-                        List<int> subjectIds = selectedSubjectIds
-                            .map((id) => int.tryParse(id) ?? -1)
-                            .where((id) => id != -1)
-                            .toList();
-                        print("Subjects IDs are these ======>$subjectIds");
-                        Navigator.pushReplacementNamed(
-                          context,
-                          RoutesName.createdMockTestScreen,
-                          arguments: {
-                            'test_mode': enableTimer,
-                            'question_mode': selectedQuestion,
-                            'subject_mode':
-                                subjectIds,
-                            'number_of_questions':
-                                provider.numberOfQuestions.toDouble()
-                          },
-                        );
-                      } catch (e) {
-                        print("Error converting subject IDs: $e");
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                "Please select all options before submitting!")),
-                      );
-                    }
+                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.textColor,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Card(
+                    child: ExpansionTile(
+                      title: Text('Question Mode'),
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ..._questions.map((question) => ListTile(
+                                  leading: Radio<String>(
+                                    activeColor: AppColors.primaryColor,
+                                    value: question,
+                                    groupValue: selectedQuestion,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedQuestion = value;
+                                      });
+                                    },
+                                  ),
+                                  title: Row(
+                                    children: [
+                                      Text(
+                                        question,
+                                        // style: AppTextStyle.profileSubTitleText,
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      // numIcon('445')
+                                    ],
+                                  ),
+                                )),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  child: Text('Generate'),
                 ),
-              ),
-            );
-          })
-        ],
-      ),
+                Consumer<CreateMockTestProvider>(
+                  builder: (context, provider, child) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Card(
+                        child: ExpansionTile(
+                          title: Text('Number of Questions'),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Slider(
+                                    activeColor: AppColors.primaryColor,
+                                    value: provider.numberOfQuestions
+                                        .toDouble()
+                                        .clamp(10.0, 100.0),
+                                    min: 10,
+                                    max: 100,
+                                    divisions: 99,
+                                    label: provider.numberOfQuestions
+                                        .round()
+                                        .toString(),
+                                    onChanged: (value) {
+                                      provider.setNumberOfQuestion(value);
+                                    },
+                                  ),
+                                  SizedBox(height: 8.0),
+                                  Text(
+                                    'Selected: ${provider.numberOfQuestions.round()} questions',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Consumer<CreateMockTestProvider>(
+                    builder: (context, provider, child) {
+                  return Align(
+                    alignment: Alignment.center,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 30.0),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (selectedSubjectIds.isNotEmpty &&
+                              selectedQuestion != null) {
+                            try {
+                              List<int> subjectIds = selectedSubjectIds
+                                  .map((id) => int.tryParse(id) ?? -1)
+                                  .where((id) => id != -1)
+                                  .toList();
+                              print(
+                                  "Subjects IDs are these ======> $subjectIds");
+                              Navigator.pushReplacementNamed(
+                                context,
+                                RoutesName.createdMockTestScreen,
+                                arguments: {
+                                  'test_mode': enableTimer,
+                                  'question_mode': selectedQuestion,
+                                  'subject_mode': subjectIds,
+                                  'number_of_questions':
+                                      provider.numberOfQuestions.toDouble()
+                                },
+                              );
+                            } catch (e) {
+                              print("Error converting subject IDs: $e");
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      "Please select all options before submitting!")),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: AppColors.textColor,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                        ),
+                        child: Text('Generate'),
+                      ),
+                    ),
+                  );
+                })
+              ],
+            ),
     );
   }
 

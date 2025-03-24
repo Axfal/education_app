@@ -1,18 +1,22 @@
+// ignore_for_file: avoid_print
+
 import 'package:education_app/resources/exports.dart';
+import 'package:education_app/view_model/provider/post_test_result_provider.dart';
 
 class ResultScreen extends StatefulWidget {
   final String subject;
   final int correctAns;
   final int incorrectAns;
   final int totalQues;
+  final List<Map<String, dynamic>> questions;
 
-  const ResultScreen({
-    super.key,
-    required this.subject,
-    required this.correctAns,
-    required this.incorrectAns,
-    required this.totalQues,
-  });
+  const ResultScreen(
+      {super.key,
+      required this.subject,
+      required this.correctAns,
+      required this.incorrectAns,
+      required this.totalQues,
+      required this.questions});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -28,21 +32,22 @@ class _ResultScreenState extends State<ResultScreen> {
     super.initState();
     setMapData();
     isPassed();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      postTestResult();
+    });
   }
 
-  /// Move the provider logic here instead of `initState()`
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    setPreviousTestData();
+  void postTestResult() async {
+    final provider =
+        Provider.of<PostTestResultProvider>(context, listen: false);
+    print(widget.questions);
+    if (widget.questions.isNotEmpty) {
+      await provider.postTestResult(context, widget.questions);
+    } else {
+      print('Questions list is empty');
+    }
   }
-
-  void setPreviousTestData() {
-    final provider = Provider.of<PreviousTestProvider>(context, listen: false);
-    print("................percentage = $percentage subject = ${widget.subject} and isPass = $isPass");
-    provider.setTestData(percentage, widget.subject, isPass);
-  }
-
 
   void setMapData() {
     dataMap = {
@@ -50,7 +55,7 @@ class _ResultScreenState extends State<ResultScreen> {
       'Incorrect': widget.incorrectAns.toDouble(),
       'Unattempted': max(
         0,
-        widget.totalQues.toDouble() - (widget.correctAns + widget.incorrectAns),
+        widget.totalQues.toDouble()+1 - (widget.correctAns + widget.incorrectAns),
       ),
     };
   }
@@ -58,7 +63,7 @@ class _ResultScreenState extends State<ResultScreen> {
   void isPassed() {
     final percent = (widget.correctAns / widget.totalQues) * 100;
     percentage = percent.toInt();
-    isPass = percentage > 50;
+    isPass = percentage > 37;
   }
 
   void _showMessage(String title, String message) {
@@ -126,7 +131,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   style: AppTextStyle.profileTitleText,
                 ),
                 Text(
-                  'Unattempted: ${dataMap['Unattempted']?.toInt()}',
+                  'Unattempted: ${dataMap['Unattempted']?.toInt() ?? 0}',
                   style: AppTextStyle.profileTitleText,
                 ),
               ],
@@ -146,7 +151,8 @@ class _ResultScreenState extends State<ResultScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Provider.of<MockTestProvider>(context, listen: false)
+          Provider.of<MockTestProvider>(context, listen: false).resetProvider();
+          Provider.of<CreateMockTestProvider>(context, listen: false)
               .resetProvider();
           Navigator.pop(context);
         },

@@ -1,13 +1,25 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:education_app/resources/exports.dart';
+import 'package:education_app/view_model/provider/profile_provider.dart';
 
-Widget drawerWidget(BuildContext context) => Drawer(
-      backgroundColor: AppColors.primaryColor,
+Widget drawerWidget(BuildContext context, ProfileProvider userdata) => Drawer(
       child: Container(
         decoration: BoxDecoration(color: AppColors.primaryColor),
         child: Consumer<BottomNavigatorBarProvider>(
           builder: (context, provider, child) {
+            final String baseUrl =
+                "https://nomore.com.pk/MDCAT_ECAT_Education/API/";
+            String? profileImage = userdata.profileModel?.user?.profileImage;
+            String defaultImageUrl = 'https://storage.needpix.com/rsynced_images/head-659651_1280.png';
+            String imageUrl = (profileImage != null && profileImage.startsWith('http'))
+                ? profileImage
+                : '$baseUrl$profileImage';
+
+            if (profileImage == null || profileImage.isEmpty) {
+              imageUrl = defaultImageUrl;
+            }
+
             return ListView(children: [
               DrawerHeader(
                 decoration: BoxDecoration(
@@ -18,13 +30,20 @@ Widget drawerWidget(BuildContext context) => Drawer(
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      // child:
-                      // Image(image: AssetImage('assets/images/profile.png')),
+                      backgroundImage:
+                          (imageUrl.isNotEmpty && !imageUrl.contains("null"))
+                              ? NetworkImage(imageUrl)
+                              : const AssetImage(
+                                      'assets/images/default_profile.png')
+                                  as ImageProvider,
+                      onBackgroundImageError: (_, __) {
+                        debugPrint("Error loading image: $imageUrl");
+                      },
                     ),
                     SizedBox(height: 5),
-                    Text('Muhammad Anfal',
+                    Text('${userdata.profileModel!.user!.username}',
                         style: AppTextStyle.subscriptionTitleText),
-                    Text('anfalshah72@gmil.com',
+                    Text('${userdata.profileModel!.user!.email}',
                         style: AppTextStyle.subscriptionDetailText),
                   ],
                 ),
@@ -41,10 +60,12 @@ Widget drawerWidget(BuildContext context) => Drawer(
               drawerItems('Notes', () {
                 Navigator.pushNamed(context, RoutesName.noteScreen);
               }, Icons.notes_outlined),
-              drawerItems('My Notebook', () {}, Icons.book_outlined),
+              drawerItems('My Notebook', () {
+                Navigator.pushNamed(context, RoutesName.myNoteBookScreen);
+              }, Icons.book_outlined),
               drawerItems('Help', () {}, Icons.help_outline_outlined),
               drawerItems('Sign  Out', () {
-                LogOut(context);
+                logOut(context);
               }, Icons.logout),
             ]);
           },
@@ -52,7 +73,7 @@ Widget drawerWidget(BuildContext context) => Drawer(
       ),
     );
 
-void LogOut(BuildContext context) {
+void logOut(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
@@ -64,14 +85,11 @@ void LogOut(BuildContext context) {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           TextButton(
-              onPressed: (){
+              onPressed: () {
                 try {
-                  final previousTestProvider =
-                      Provider.of<PreviousTestProvider>(context, listen: false);
                   final provider =
                       Provider.of<AuthProvider>(context, listen: false);
 
-                  // previousTestProvider.deleteAllTests;
                   provider.logout();
                   Navigator.pushReplacementNamed(context, RoutesName.login);
                 } catch (e) {
@@ -82,20 +100,6 @@ void LogOut(BuildContext context) {
                     content: Text('Logged out successfully!'),
                   ),
                 );
-
-                // Navigator.pop(context);
-                //
-                // try {
-                //   final provider =
-                //       Provider.of<AuthProvider>(context, listen: false);
-                //   provider.logout();
-                //
-                //   Navigator.pushReplacementNamed(context, RoutesName.login);
-                // } catch (e) {
-                //   ScaffoldMessenger.of(context).showSnackBar(
-                //     SnackBar(content: Text('Error logging out!')),
-                //   );
-                // }
               },
               child: Text('Logout')),
           SizedBox(width: 20),

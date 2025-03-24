@@ -1,7 +1,8 @@
-// ignore_for_file: prefer_const_constructors, non_constant_identifier_names
+// ignore_for_file: prefer_const_constructors, non_constant_identifier_names, avoid_print
 
 import 'package:education_app/resources/exports.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:education_app/view_model/provider/profile_provider.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,11 +13,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
+  final NoScreenshot _noScreenshot = NoScreenshot.instance;
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    fetchCourses();
+    _noScreenshot.screenshotOn();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchCourses();
+      getUserData();
+    });
+  }
+
+  void getUserData() async {
+    final profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
+    await profileProvider.getUserProfileData(context);
   }
 
   void fetchCourses() async {
@@ -26,8 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print("Error fetching subjects: $e");
-      }
-      if (kDebugMode) {
         print(stackTrace);
       }
     } finally {
@@ -39,18 +50,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final subjectprovider = Provider.of<SubjectProvider>(context);
     final courseProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userData = Provider.of<ProfileProvider?>(context);
+    final String baseUrl = "https://nomore.com.pk/MDCAT_ECAT_Education/API/";
+    String? profileImage = userData?.profileModel?.user?.profileImage;
+    String defaultImageUrl = 'https://storage.needpix.com/rsynced_images/head-659651_1280.png';
+
+    String imageUrl = (profileImage != null && profileImage.startsWith('http'))
+        ? profileImage
+        : '$baseUrl$profileImage';
+
+    if (profileImage == null || profileImage.isEmpty) {
+      imageUrl = defaultImageUrl;
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title: Text(
-          'Eduka',
-          style: AppTextStyle.appBarText,
-        ),
+        title: Text('Eduka', style: AppTextStyle.appBarText),
         centerTitle: true,
       ),
-      drawer: drawerWidget(context),
+      drawer: userData?.profileModel != null
+          ? drawerWidget(context, userData!)
+          : Container(),
       body: CustomScrollView(
         slivers: [
           SliverPadding(
@@ -58,25 +79,42 @@ class _HomeScreenState extends State<HomeScreen> {
             sliver: SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Hello, Anfal', style: AppTextStyle.profileTitleText),
-                    Text('Welcome to Eduka',
-                        style: AppTextStyle.profileSubTitleText),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (userData?.profileModel?.success == true)
+                          Text(
+                            'Hello ${userData?.profileModel?.user?.username ?? "User"}',
+                            style: AppTextStyle.profileTitleText,
+                          )
+                        else
+                          Text(
+                            'User name not found',
+                            style: TextStyle(
+                                color: Colors.red, fontWeight: FontWeight.bold),
+                          ),
+                        Text('Welcome to Eduka',
+                            style: AppTextStyle.profileSubTitleText),
+                      ],
+                    ),
+                    CircleAvatar(
+                      // backgroundColor: AppColors.primaryColor,
+                      radius: 25,
+                      backgroundImage: imageUrl.isNotEmpty
+                          ? NetworkImage(imageUrl)
+                          : AssetImage('assets/images/mdcat.png'),
+
+                    )
                   ],
                 ),
               ),
             ),
           ),
-          // SliverPadding(
-          //   padding: const EdgeInsets.only(top: 0, left: 20),
-          //   sliver: SliverToBoxAdapter(
-          //     child: Text('Features', style: AppTextStyle.profileTitleText),
-          //   ),
-          // ),
           SliverToBoxAdapter(
-            child: SubscriptionButton((){
+            child: SubscriptionButton(() {
               Navigator.pushNamed(context, RoutesName.subscriptionScreen);
             }),
           ),
@@ -92,44 +130,37 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 240,
               child: isLoading
                   ? Center(child: CircularProgressIndicator())
-                  : (courseProvider.courseList!.data!.isNotEmpty
+                  : (courseProvider.courseList?.data?.isNotEmpty ?? false)
                       ? ListView.builder(
                           shrinkWrap: true,
                           scrollDirection: Axis.horizontal,
-                          itemCount: courseProvider.courseList!.data!.length,
+                          itemCount:
+                              courseProvider.courseList?.data?.length ?? 0,
                           itemBuilder: (context, index) {
                             final courseData =
                                 courseProvider.courseList!.data![index];
-                            final int? courseId = courseData.id;
+                            final int courseId = courseData.id ?? -1;
                             final String courseName =
                                 courseData.testName ?? 'Course';
+
                             return CoursesContainer(
                               courseName,
                               'assets/images/mdcat.png',
                               'Brief description of the course content, highlighting key benefits and features.',
                               () async {
-                                if (courseId != null) {
-                                  if (kDebugMode) {
-                                    print("Passing course id: $courseId");
-                                  }
+                                if (courseId != -1) {
+                                  print("Passing course id: $courseId");
                                   final userType =
                                       courseProvider.userSession?.userType;
                                   print('userType = $userType');
-                                  if (userType == "free") {
-                                    // await subjectprovider.setSubjects(courseId);
-                                    Navigator.pushNamed(
-                                        context, RoutesName.course,
-                                        arguments: {'courseId': courseId});
-                                  } else {
-                                    // await subjectprovider.setSubjects(courseId);
-                                    Navigator.pushNamed(
-                                        context, RoutesName.course,
-                                        arguments: {'courseId': courseId});
-                                  }
+
+                                  Navigator.pushNamed(
+                                    context,
+                                    RoutesName.course,
+                                    arguments: {'courseId': courseId},
+                                  );
                                 } else {
-                                  if (kDebugMode) {
-                                    print("Course id is null");
-                                  }
+                                  print("Course id is null");
                                 }
                               },
                             );
@@ -137,29 +168,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       : Center(
                           child: Text("No courses available",
-                              style: AppTextStyle.profileSubTitleText))),
+                              style: AppTextStyle.profileSubTitleText),
+                        ),
             ),
           ),
-
         ],
       ),
     );
   }
-  // Widget FeatureButton(VoidCallback onTap, IconData icon, ) => InkWell(
-  //   onTap: onTap,
-  //   child: Padding(
-  //     padding: const EdgeInsets.all(5.0),
-  //     child: Container(
-  //       height: 50,
-  //       width: 50,
-  //       decoration: BoxDecoration(
-  //         color: Colors.blue,
-  //           borderRadius: BorderRadius.circular(20)
-  //       ),
-  //       child: Column(
-  //         children: [],
-  //       ),
-  //     ),
-  //   ),
-  // );
 }

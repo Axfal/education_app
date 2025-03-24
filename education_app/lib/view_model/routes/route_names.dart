@@ -29,6 +29,8 @@ class RoutesName {
 
   static const String subjectScreen = "subject_screen";
 
+  static const String myNoteBookScreen = "my_note_book_screen";
+
   static const String previousTestScreen = "previous_test_screen";
 
   static const String createdMockTestScreen = "created_screen";

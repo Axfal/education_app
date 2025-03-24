@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors, avoid_print
 
 import 'package:education_app/resources/exports.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 
 class CreatedMockTestScreen extends StatefulWidget {
   final bool testMode;
@@ -21,11 +22,11 @@ class CreatedMockTestScreen extends StatefulWidget {
 }
 
 class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
-  // late MockTestsProvider provider;
-
+  final NoScreenshot _noScreenshot = NoScreenshot.instance;
   @override
   void initState() {
     super.initState();
+    _noScreenshot.screenshotOn();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getQuestions();
     });
@@ -44,46 +45,50 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
     final testId = subjectProvider.testId;
 
     if (userId == null) {
-      print("❌ ERROR: User ID is null! Cannot fetch questions.");
+      print("ERROR: User ID is null! Cannot fetch questions.");
       return;
     }
 
-    print("🔍 Fetching Questions for:");
-    print("👤 User ID: $userId");
-    print("📝 Test ID: $testId");
-    print("📚 Subject Mode: ${widget.subjectMode}");
-    print("🔢 Number of Questions: ${widget.numberOfQuestions}");
+    print("Fetching Questions for:");
+    print("User ID: $userId");
+    print("Test ID: $testId");
+    print("Subject Mode: ${widget.subjectMode}");
+    print("Number of Questions: ${widget.numberOfQuestions}");
 
     Map<String, dynamic> data = {
       "user_id": userId,
       "test_id": testId,
       "subject_id": widget.subjectMode,
-      "no_of_question": widget.numberOfQuestions.toInt()
+      "no_of_question": widget.numberOfQuestions.toInt(),
+      "question_mode": widget.questionMode
     };
 
     await provider.getQuestions(context, data);
   }
 
-  // Add this helper method to remove HTML tags
   String removeHtmlTags(String? htmlText) {
     if (htmlText == null) return '';
 
-    // First, decode HTML entities
     var text = htmlText
         .replaceAll('&nbsp;', ' ')
         .replaceAll('&amp;', '&')
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>');
 
-    // Then remove HTML tags
     return text.replaceAll(RegExp(r'<[^>]*>'), '');
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<CreateMockTestProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+            onPressed: () {
+              provider.restartTest();
+              Navigator.pop(context);
+            },
+            icon: Icon(Icons.arrow_back_outlined)),
         title: Text(
           'Mock Test',
           style: AppTextStyle.appBarText,
@@ -121,6 +126,11 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
   }
 
   Widget _buildStartTestSection(CreateMockTestProvider provider) {
+    int minutes = provider.timeInSeconds ~/ 60;
+    int seconds = provider.timeInSeconds % 60;
+    String formattedTime =
+        'Total Time: ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} min';
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -138,7 +148,7 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
         const SizedBox(height: 20),
         if (widget.testMode)
           Text(
-            'Total Time: ${provider.timeInSeconds} sec',
+            formattedTime,
             style: AppTextStyle.profileTitleText,
           ),
       ],
@@ -158,8 +168,12 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
                 return Text('Time\'s up!',
                     style: AppTextStyle.profileTitleText);
               }
+
+              String minutes = (time.min ?? 0).toString();
+              String seconds = (time.sec ?? 0).toString().padLeft(2, '0');
+
               return Text(
-                'Time Left: ${time.sec} sec',
+                'Time Left: $minutes:$seconds minutes',
                 style: AppTextStyle.profileTitleText,
               );
             },
@@ -201,87 +215,151 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
                 "${provider.currentIndex + 1}) ${removeHtmlTags(currentQuestion.question)}",
                 style: AppTextStyle.questionText,
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               ListTile(
-                title: Text(
-                    removeHtmlTags(currentQuestion.option1)
-                        .replaceAll(RegExp(r'[a-d]\)'), '')
-                        .trim(),
-                    style: AppTextStyle.answerText),
-                leading: Radio<int>(
-                  value: 0,
-                  groupValue: provider.selectedOptions[provider.currentIndex],
-                  onChanged: provider.isTestStarted &&
-                          !provider.isSubmitted[provider.currentIndex]
-                      ? (value) {
-                          if (value != null) {
-                            provider.onChangeRadio(
-                                provider.currentIndex, value);
+                  title: Text(
+                      removeHtmlTags(currentQuestion.option1)
+                          .replaceAll(RegExp(r'[a-d]\)'), '')
+                          .trim(),
+                      style: AppTextStyle.answerText),
+                  leading: Radio<int>(
+                    value: 0,
+                    groupValue: provider.selectedOptions[provider.currentIndex],
+                    onChanged: !provider.isSubmitted[provider.currentIndex]
+                        ? (value) {
+                            if (value != null) {
+                              provider.onChangeRadio(
+                                  provider.currentIndex, value);
+                            }
                           }
-                        }
-                      : null,
-                ),
-              ),
+                        : null,
+                  ),
+                  trailing: provider.isSubmitted[provider.currentIndex] == false
+                      ? null
+                      : provider.isTrue![provider.currentIndex] &&
+                              0 ==
+                                  provider
+                                      .selectedOptions[provider.currentIndex]
+                          ? Icon(Icons.check, color: Colors.green, weight: 100)
+                          : provider.correctAnswerOptionIndex![
+                                      provider.currentIndex] ==
+                                  0
+                              ? Icon(Icons.check,
+                                  color: Colors.green, weight: 100)
+                              : provider.selectedOptions[
+                                          provider.currentIndex] !=
+                                      0
+                                  ? null
+                                  : Icon(Icons.close,
+                                      color: Colors.red, weight: 100)),
               ListTile(
-                title: Text(
-                    removeHtmlTags(currentQuestion.option2)
-                        .replaceAll(RegExp(r'[a-d]\)'), '')
-                        .trim(),
-                    style: AppTextStyle.answerText),
-                leading: Radio<int>(
-                  value: 1,
-                  groupValue: provider.selectedOptions[provider.currentIndex],
-                  onChanged: provider.isTestStarted &&
-                          !provider.isSubmitted[provider.currentIndex]
-                      ? (value) {
-                          if (value != null) {
-                            provider.onChangeRadio(
-                                provider.currentIndex, value);
-                          }
-                        }
-                      : null,
-                ),
-              ),
+                  title: Text(
+                      removeHtmlTags(currentQuestion.option2)
+                          .replaceAll(RegExp(r'[a-d]\)'), '')
+                          .trim(),
+                      style: AppTextStyle.answerText),
+                  leading: Radio<int>(
+                    value: 1, // Current option value
+                    groupValue: provider.selectedOptions[provider.currentIndex],
+                    onChanged: provider.isSubmitted[provider.currentIndex]
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              provider.onChangeRadio(
+                                  provider.currentIndex, value);
+                            }
+                          },
+                  ),
+                  trailing: provider.isSubmitted[provider.currentIndex] == false
+                      ? null
+                      : provider.isTrue![provider.currentIndex] &&
+                              1 ==
+                                  provider
+                                      .selectedOptions[provider.currentIndex]
+                          ? Icon(Icons.check, color: Colors.green, weight: 100)
+                          : provider.correctAnswerOptionIndex![
+                                      provider.currentIndex] ==
+                                  1
+                              ? Icon(Icons.check,
+                                  color: Colors.green, weight: 100)
+                              : provider.selectedOptions[
+                                          provider.currentIndex] !=
+                                      1
+                                  ? null
+                                  : Icon(Icons.close,
+                                      color: Colors.red, weight: 100)),
               ListTile(
-                title: Text(
-                    removeHtmlTags(currentQuestion.option3)
-                        .replaceAll(RegExp(r'[a-d]\)'), '')
-                        .trim(),
-                    style: AppTextStyle.answerText),
-                leading: Radio<int>(
-                  value: 2,
-                  groupValue: provider.selectedOptions[provider.currentIndex],
-                  onChanged: provider.isTestStarted &&
-                          !provider.isSubmitted[provider.currentIndex]
-                      ? (value) {
-                          if (value != null) {
-                            provider.onChangeRadio(
-                                provider.currentIndex, value);
-                          }
-                        }
-                      : null,
-                ),
-              ),
+                  title: Text(
+                      removeHtmlTags(currentQuestion.option3)
+                          .replaceAll(RegExp(r'[a-d]\)'), '')
+                          .trim(),
+                      style: AppTextStyle.answerText),
+                  leading: Radio<int>(
+                    value: 2, // Current option value
+                    groupValue: provider.selectedOptions[provider.currentIndex],
+                    onChanged: provider.isSubmitted[provider.currentIndex]
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              provider.onChangeRadio(
+                                  provider.currentIndex, value);
+                            }
+                          },
+                  ),
+                  trailing: provider.isSubmitted[provider.currentIndex] == false
+                      ? null
+                      : provider.isTrue![provider.currentIndex] &&
+                              2 ==
+                                  provider
+                                      .selectedOptions[provider.currentIndex]
+                          ? Icon(Icons.check, color: Colors.green, weight: 100)
+                          : provider.correctAnswerOptionIndex![
+                                      provider.currentIndex] ==
+                                  2
+                              ? Icon(Icons.check,
+                                  color: Colors.green, weight: 100)
+                              : provider.selectedOptions[
+                                          provider.currentIndex] !=
+                                      2
+                                  ? null
+                                  : Icon(Icons.close,
+                                      color: Colors.red, weight: 100)),
               ListTile(
-                title: Text(
-                    removeHtmlTags(currentQuestion.option4)
-                        .replaceAll(RegExp(r'[a-d]\)'), '')
-                        .trim(),
-                    style: AppTextStyle.answerText),
-                leading: Radio<int>(
-                  value: 3,
-                  groupValue: provider.selectedOptions[provider.currentIndex],
-                  onChanged: provider.isTestStarted &&
-                          !provider.isSubmitted[provider.currentIndex]
-                      ? (value) {
-                          if (value != null) {
-                            provider.onChangeRadio(
-                                provider.currentIndex, value);
+                  title: Text(
+                      removeHtmlTags(currentQuestion.option4)
+                          .replaceAll(RegExp(r'[a-d]\)'), '')
+                          .trim(),
+                      style: AppTextStyle.answerText),
+                  leading: Radio<int>(
+                    value: 3,
+                    groupValue: provider.selectedOptions[provider.currentIndex],
+                    onChanged: !provider.isSubmitted[provider.currentIndex]
+                        ? (value) {
+                            if (value != null) {
+                              provider.onChangeRadio(
+                                  provider.currentIndex, value);
+                            }
                           }
-                        }
-                      : null,
-                ),
-              ),
+                        : null,
+                  ),
+                  trailing: provider.isSubmitted[provider.currentIndex] == false
+                      ? null
+                      : provider.isTrue![provider.currentIndex] &&
+                              3 ==
+                                  provider
+                                      .selectedOptions[provider.currentIndex]
+                          ? Icon(Icons.check, color: Colors.green, weight: 100)
+                          : provider.correctAnswerOptionIndex![
+                                      provider.currentIndex] ==
+                                  3
+                              ? Icon(Icons.check,
+                                  color: Colors.green, weight: 100)
+                              : provider.selectedOptions[
+                                          provider.currentIndex] !=
+                                      3
+                                  ? null
+                                  : Icon(Icons.close,
+                                      color: Colors.red, weight: 100)),
               const SizedBox(height: 10),
               _buildNavigationButtons(provider),
               const SizedBox(height: 10),
@@ -312,7 +390,8 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
           ),
         ),
         ElevatedButton(
-          onPressed: provider.isSubmitted[provider.currentIndex]
+          onPressed: provider.isTestStarted == false ||
+                  provider.isSubmitted[provider.currentIndex]
               ? null
               : () => provider.submitAnswer(context, provider.currentIndex),
           style: ElevatedButton.styleFrom(
@@ -342,13 +421,23 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
   }
 
   Widget _buildExplanation(CreateMockTestProvider provider) {
+    final authProvider = Provider.of<AuthProvider>(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(height: 20),
         ElevatedButton(
-          onPressed: () => showFeedbackDialog(
-              context, (provider.currentIndex + 1), 'Created Mock Test'),
+          onPressed: () {
+            if (provider.questionList.isNotEmpty &&
+                provider.currentIndex < provider.questionList.length) {
+              showFeedbackDialog(
+                context,
+                authProvider.userSession!.userId,
+                authProvider.userSession!.testId,
+                provider.questionList[provider.currentIndex].id!,
+              );
+            }
+          },
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: AppColors.primaryColor,
@@ -365,6 +454,7 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
           children: [
             Text('Show Explanation', style: AppTextStyle.questionText),
             Switch(
+              activeColor: AppColors.primaryColor,
               value: provider.showExplanation[provider.currentIndex],
               onChanged: (value) => provider.toggleExplanationSwitch(value),
             ),
@@ -373,9 +463,7 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
         if (provider.showExplanation[provider.currentIndex] &&
             provider.isSubmitted[provider.currentIndex])
           Text(
-            removeHtmlTags(
-                    provider.questionList[provider.currentIndex].detail) ??
-                "No explanation available.",
+            removeHtmlTags(provider.questionList[provider.currentIndex].detail),
             style: AppTextStyle.answerText,
           ),
       ],
@@ -383,15 +471,27 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
   }
 
   void showFeedbackDialog(
-      BuildContext context, int questionNum, String selectSubject) {
+      BuildContext context, int userId, int testId, int questionId) {
     final formKey = GlobalKey<FormState>();
     TextEditingController feedbackController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Share Feedback',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20), // Rounded corners
+        ),
+        title: Center(
+          child: Text(
+            'Share Feedback',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        contentPadding: EdgeInsets.all(20),
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -403,9 +503,13 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
                   decoration: InputDecoration(
                     labelText: 'Your Feedback',
                     hintText: 'Enter any issues or suggestions',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100], // Soft background inside input
                   ),
-                  maxLines: 4,
+                  maxLines: 5,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your feedback';
@@ -413,24 +517,45 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState?.validate() ?? false) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Feedback Submitted Successfully! subject is $selectSubject quetion number is $questionNum')),
-                      );
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    backgroundColor: AppColors.primaryColor,
+                SizedBox(height: 25),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (formKey.currentState?.validate() ?? false) {
+                        Map<String, dynamic> data = {
+                          "user_id": userId,
+                          "test_id": testId,
+                          "question_id": questionId,
+                          "detail": feedbackController.text
+                        };
+                        final feedbackProvider = Provider.of<FeedbackProvider>(
+                            context,
+                            listen: false);
+                        await feedbackProvider.giveMockTestFeedback(
+                            context, data);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Submit Feedback',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  child:
-                      Text('Submit', style: AppTextStyle.subscriptionTitleText),
                 ),
               ],
             ),

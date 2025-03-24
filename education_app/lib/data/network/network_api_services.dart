@@ -21,12 +21,54 @@ class NetworkApiServices extends BaseApiServices {
 
     return responseJson;
   }
+  @override
+  Future<dynamic> getPostMultipartRequestApiResponse(String url, dynamic data) async {
+    try {
+      if (kDebugMode) {
+        print("Requesting API...");
+        print("URL: $url");
+        print("Request Data: $data");
+      }
+
+      if (data is! Map<String, dynamic>) {
+        throw Exception("Invalid data type. Expected Map<String, dynamic>.");
+      }
+
+      var request = http.MultipartRequest("POST", Uri.parse(url));
+
+      // Convert all values to String before adding to request
+      data.forEach((key, value) {
+        request.fields[key] = value.toString(); // ✅ Convert to String
+      });
+
+      request.headers['Accept'] = 'application/json';
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (kDebugMode) {
+        print("Response Status: ${response.statusCode}");
+        print("Response Body: ${response.body}");
+      }
+
+      return returnResponse(response);
+    } on SocketException {
+      throw FetchDataException("No Internet Connection");
+    } on TimeoutException {
+      throw FetchDataException("API Timeout: The request took too long!");
+    } catch (error) {
+      if (kDebugMode) {
+        print("API Error: $error");
+      }
+      throw Exception("API error: ${error.toString()}");
+    }
+  }
 
   @override
   Future<dynamic> getPostApiResponse(String url, dynamic data) async {
     try {
       if (kDebugMode) {
-        print("🔵 Requesting API...");
+        print("Requesting API...");
         print("URL: $url");
         print("Request Data: ${jsonEncode(data)}");
       }
@@ -43,8 +85,8 @@ class NetworkApiServices extends BaseApiServices {
           .timeout(const Duration(seconds: 20)); // Increased timeout
 
       if (kDebugMode) {
-        print("✅ Response Status: ${response.statusCode}");
-        print("✅ Response Body: ${response.body}");
+        print("Response Status: ${response.statusCode}");
+        print("Response Body: ${response.body}") ;
       }
 
       return returnResponse(response); // Use response handler
@@ -54,7 +96,7 @@ class NetworkApiServices extends BaseApiServices {
       throw FetchDataException("API Timeout: The request took too long!");
     } catch (error) {
       if (kDebugMode) {
-        print("❌ API Error: $error");
+        print("API Error: $error");
       }
       throw Exception("API error: ${error.toString()}");
     }

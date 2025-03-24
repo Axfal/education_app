@@ -2,6 +2,7 @@
 
 import 'package:education_app/resources/exports.dart';
 
+
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -63,16 +64,21 @@ class Routes {
         final correctAnswer = args['correctAns'] ?? 0;
         final incorrectAnswer = args['incorrectAns'] ?? 0;
         final totalQuestion = args['totalQuestion'] ?? 0;
+        List<Map<String, dynamic>> questions = args['questions'] ?? [];
         return MaterialPageRoute(
             builder: (context) => ResultScreen(
                   subject: subject,
                   correctAns: correctAnswer,
                   incorrectAns: incorrectAnswer,
                   totalQues: totalQuestion,
+              questions: questions,
                 ));
 
       case RoutesName.chapterScreen:
         return MaterialPageRoute(builder: (context) => ChaptersScreen());
+
+     case RoutesName.myNoteBookScreen:
+        return MaterialPageRoute(builder: (context) => MyNoteBook());
 
       case RoutesName.questionScreen:
         final args = settings.arguments as Map<String, dynamic>? ?? {};

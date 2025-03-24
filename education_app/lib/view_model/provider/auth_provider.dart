@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:education_app/resources/exports.dart';
-import '../../model/user_session_model.dart';
+import '../../model/hive_database_model/user_session_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final _authRepository = AuthRepository();

@@ -12,6 +12,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _bookController;
   late Future<void> _sessionLoader;
 
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +46,9 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(color: AppColors.primaryColor),
+        decoration: BoxDecoration(
+            color: AppColors.primaryColor
+        ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

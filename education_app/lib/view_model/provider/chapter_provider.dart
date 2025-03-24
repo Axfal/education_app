@@ -37,7 +37,9 @@ class ChapterProvider with ChangeNotifier {
         print("Fetched Chapters: ${response.chapters}");
       }
 
-      if (response.success == true && response.chapters != null && subjectName != '') {
+      if (response.success == true &&
+          response.chapters != null &&
+          subjectName != '') {
         _chapterData = response.chapters;
         print('subjectName = $subjectName');
         _subject = subjectName;

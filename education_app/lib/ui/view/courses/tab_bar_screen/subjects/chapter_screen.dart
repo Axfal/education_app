@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:education_app/resources/exports.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 
 class ChaptersScreen extends StatefulWidget {
   const ChaptersScreen({super.key});
@@ -10,10 +11,11 @@ class ChaptersScreen extends StatefulWidget {
 }
 
 class _ChaptersScreenState extends State<ChaptersScreen> {
-  @override
+  final NoScreenshot _noScreenshot = NoScreenshot.instance;
   @override
   void initState() {
     super.initState();
+    _noScreenshot.screenshotOn();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final chapterProvider =
           Provider.of<ChapterProvider>(context, listen: false);

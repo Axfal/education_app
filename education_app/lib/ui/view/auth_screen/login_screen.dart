@@ -29,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Image(
                     image: AssetImage("assets/images/login.png"), height: 200),
-                const Text(
+                Text(
                   "Welcome Back!",
                   style: TextStyle(
                       fontSize: 28,
@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () {
                         Navigator.pushNamed(context, RoutesName.signup);
-                      }, // Navigate to Signup Screen
+                      },
                       child: Text("Create an account",
                           style: TextStyle(color: AppColors.primaryColor)),
                     ),

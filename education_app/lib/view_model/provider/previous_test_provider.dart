@@ -1,48 +1,54 @@
-import 'package:education_app/resources/exports.dart';
-import 'package:intl/intl.dart';
+// ignore_for_file: avoid_print
 
-import '../../model/previous_test_report_model.dart';
+import 'package:education_app/model/get_test_result_model.dart';
+import 'package:education_app/repository/get_test_result_repo.dart';
+import 'package:education_app/resources/exports.dart';
 
 class PreviousTestProvider with ChangeNotifier {
-  String? _date;
-  String? get date => _date;
+  final _getTestResultRepo = GetTestResultRepository();
 
-  int? _percentage;
-  int? get percentage => _percentage;
+  GetTestResultModel? _getTestResultModel;
+  bool _isLoading = false;
 
-  String? _subject;
-  String? get subject => _subject;
+  GetTestResultModel? get getTestModel => _getTestResultModel;
+  bool get isLoading => _isLoading;
 
-  bool? _pass;
-  bool? get pass => _pass;
+  Future<void> getTestData(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.userSession?.userId;
+    final testId = authProvider.userSession?.testId;
 
-  String setDate() {
-    DateTime now = DateTime.now();
-    return DateFormat('yyyy-MM-dd').format(now);
-  }
+    if (userId == null || testId == null) {
+      return;
+    }
 
-  Future<void> setTestData(int percentage, String subject, bool isPass) async {
-    _percentage = percentage;
-    _date = setDate();
-    _pass = isPass;
-    _subject = subject;
-
-    String status = isPass ? "Pass" : "Fail";
-
-    var box = Hive.box<PreviousTestReportModel>('previousTests');
-    await box.add(PreviousTestReportModel(
-      date: _date!,
-      percentage: _percentage!,
-      status: status,
-      subject: _subject!,
-    ));
-
+    _isLoading = true;
     notifyListeners();
-  }
-  Future<void> deleteAllTests() async {
-    var box = Hive.box<PreviousTestReportModel>('previousTests');
-    await box.clear(); // Clears all stored data
 
-    notifyListeners();
+    try {
+      _getTestResultModel =
+          await _getTestResultRepo.getTestResult(userId, testId);
+
+      if (_getTestResultModel != null &&
+          _getTestResultModel!.examResults != null) {
+        for (var exam in _getTestResultModel!.examResults!) {
+          if (exam.subjects != null) {
+            for (var subject in exam.subjects!) {
+              print(subject.subjectName);
+            }
+          } else {
+            print("No subjects found in examResults");
+          }
+        }
+      } else {
+        print('No examResults found');
+      }
+    } catch (e) {
+      print("Error fetching test result: $e");
+      _getTestResultModel = null; // Ensure null safety
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

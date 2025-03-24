@@ -1,23 +1,17 @@
 class GetTestResultModel {
   bool? success;
   Test? test;
-  String? date;
-  Overall? overall;
-  List<Subjects>? subjects;
+  List<ExamResults>? examResults;
 
-  GetTestResultModel(
-      {this.success, this.test, this.date, this.overall, this.subjects});
+  GetTestResultModel({this.success, this.test, this.examResults});
 
   GetTestResultModel.fromJson(Map<String, dynamic> json) {
     success = json['success'];
     test = json['test'] != null ? new Test.fromJson(json['test']) : null;
-    date = json['date'];
-    overall =
-        json['overall'] != null ? new Overall.fromJson(json['overall']) : null;
-    if (json['subjects'] != null) {
-      subjects = <Subjects>[];
-      json['subjects'].forEach((v) {
-        subjects!.add(new Subjects.fromJson(v));
+    if (json['exam_results'] != null) {
+      examResults = <ExamResults>[];
+      json['exam_results'].forEach((v) {
+        examResults!.add(new ExamResults.fromJson(v));
       });
     }
   }
@@ -28,12 +22,8 @@ class GetTestResultModel {
     if (this.test != null) {
       data['test'] = this.test!.toJson();
     }
-    data['date'] = this.date;
-    if (this.overall != null) {
-      data['overall'] = this.overall!.toJson();
-    }
-    if (this.subjects != null) {
-      data['subjects'] = this.subjects!.map((v) => v.toJson()).toList();
+    if (this.examResults != null) {
+      data['exam_results'] = this.examResults!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -54,6 +44,45 @@ class Test {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['id'] = this.id;
     data['test_name'] = this.testName;
+    return data;
+  }
+}
+
+class ExamResults {
+  int? examId;
+  String? date;
+  String? examType;
+  Overall? overall;
+  List<Subjects>? subjects;
+
+  ExamResults(
+      {this.examId, this.date, this.examType, this.overall, this.subjects});
+
+  ExamResults.fromJson(Map<String, dynamic> json) {
+    examId = json['exam_id'];
+    date = json['date'];
+    examType = json['exam_type'];
+    overall =
+        json['overall'] != null ? new Overall.fromJson(json['overall']) : null;
+    if (json['subjects'] != null) {
+      subjects = <Subjects>[];
+      json['subjects'].forEach((v) {
+        subjects!.add(new Subjects.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['exam_id'] = this.examId;
+    data['date'] = this.date;
+    data['exam_type'] = this.examType;
+    if (this.overall != null) {
+      data['overall'] = this.overall!.toJson();
+    }
+    if (this.subjects != null) {
+      data['subjects'] = this.subjects!.map((v) => v.toJson()).toList();
+    }
     return data;
   }
 }
@@ -84,6 +113,7 @@ class Overall {
 }
 
 class Subjects {
+  int? subjectId;
   String? subjectName;
   int? correct;
   int? incorrect;
@@ -92,7 +122,8 @@ class Subjects {
   String? status;
 
   Subjects(
-      {this.subjectName,
+      {this.subjectId,
+      this.subjectName,
       this.correct,
       this.incorrect,
       this.total,
@@ -100,6 +131,7 @@ class Subjects {
       this.status});
 
   Subjects.fromJson(Map<String, dynamic> json) {
+    subjectId = json['subject_id'];
     subjectName = json['subject_name'];
     correct = json['correct'];
     incorrect = json['incorrect'];
@@ -110,6 +142,7 @@ class Subjects {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['subject_id'] = this.subjectId;
     data['subject_name'] = this.subjectName;
     data['correct'] = this.correct;
     data['incorrect'] = this.incorrect;

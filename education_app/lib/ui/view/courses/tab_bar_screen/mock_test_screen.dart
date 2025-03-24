@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:education_app/resources/exports.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 
 class MockTestScreen extends StatefulWidget {
   final int subjectId;
@@ -12,9 +13,11 @@ class MockTestScreen extends StatefulWidget {
 }
 
 class MockTestScreenState extends State<MockTestScreen> {
+  final NoScreenshot _noScreenshot = NoScreenshot.instance;
   @override
   void initState() {
     super.initState();
+    _noScreenshot.screenshotOn();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchData();
     });
@@ -31,11 +34,51 @@ class MockTestScreenState extends State<MockTestScreen> {
       );
     }
   }
+  String removeHtmlTags(String? htmlText) {
+    if (htmlText == null) return '';
 
+    var text = htmlText
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>');
+
+    return text.replaceAll(RegExp(r'<[^>]*>'), '');
+  }
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MockTestProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
+
+    if (provider.loading) {
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (provider.questions == null || provider.questions!.questions.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            'No questions available.',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    }
+
+    if (provider.currentIndex >= provider.questions!.questions.length) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            'No more questions available.',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    }
+
+
+    final currentQuestion = provider.questionList[provider.currentIndex];
+
     return Scaffold(
         body: provider.loading
             ? Center(child: CircularProgressIndicator())
@@ -109,116 +152,109 @@ class MockTestScreenState extends State<MockTestScreen> {
                                       ),
                                       SizedBox(height: 10),
                                       ListTile(
-                                        title: Text(
-                                            provider
-                                                .questions!
-                                                .questions[
-                                                    provider.currentIndex]
-                                                .option1
-                                                .replaceAll(
-                                                    RegExp(r'[a-d]\)'), '')
-                                                .trim(),
-                                            style: AppTextStyle.answerText),
-                                        leading: Radio<int>(
-                                          value: 0,
-                                          groupValue: provider.selectedOptions[
-                                              provider.currentIndex],
-                                          onChanged: provider.isTestStarted &&
-                                                  !provider.isSubmitted[
-                                                      provider.currentIndex]
-                                              ? (value) {
-                                                  if (value != null) {
-                                                    provider.onChangeRadio(
-                                                        provider.currentIndex,
-                                                        value);
-                                                  }
-                                                }
-                                              : null,
-                                        ),
+                                          title: Text(
+                                              removeHtmlTags(currentQuestion.option1)
+                                                  .replaceAll(RegExp(r'[a-d]\)'), '')
+                                                  .trim(),
+                                              style: AppTextStyle.answerText),
+                                          leading: Radio<int>(
+                                            value: 0,
+                                            groupValue: provider.isTestStarted?
+                                            provider.selectedOptions[provider.currentIndex]
+                                                : null,
+                                            onChanged: (provider.isTestStarted && !provider.isSubmitted[provider.currentIndex])
+                                                ? (value) {
+                                              if (value != null) {
+                                                provider.onChangeRadio(provider.currentIndex, value);
+                                              }
+                                            }
+                                                : null
+                                          ),
+
+                                          trailing: provider.isSubmitted[provider.currentIndex] == false
+                                              ? null : provider.isTrue![provider.currentIndex]
+                                              && 0 == provider.selectedOptions[provider.currentIndex]?
+                                          Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.correctAnswerOptionIndex![provider.currentIndex] == 0? Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.selectedOptions[provider.currentIndex] != 0? null: Icon(Icons.close, color: Colors.red, weight: 100)
                                       ),
                                       ListTile(
-                                        title: Text(
-                                            provider
-                                                .questions!
-                                                .questions[
-                                                    provider.currentIndex]
-                                                .option2
-                                                .replaceAll(
-                                                    RegExp(r'[a-d]\)'), '')
-                                                .trim(),
-                                            style: AppTextStyle.answerText),
-                                        leading: Radio<int>(
-                                          value: 1,
-                                          groupValue: provider.selectedOptions[
-                                              provider.currentIndex],
-                                          onChanged: provider.isTestStarted &&
-                                                  !provider.isSubmitted[
-                                                      provider.currentIndex]
-                                              ? (value) {
-                                                  if (value != null) {
-                                                    provider.onChangeRadio(
-                                                        provider.currentIndex,
-                                                        value);
-                                                  }
+                                          title: Text(
+                                              removeHtmlTags(currentQuestion.option2)
+                                                  .replaceAll(RegExp(r'[a-d]\)'), '')
+                                                  .trim(),
+                                              style: AppTextStyle.answerText),
+                                          leading: Radio<int>(
+                                            value: 1,
+                                              groupValue: provider.isTestStarted
+                                                  ? provider.selectedOptions[provider.currentIndex]
+                                                  : null,
+                                              onChanged: (provider.isTestStarted && !provider.isSubmitted[provider.currentIndex])
+                                                  ? (value) {
+                                                if (value != null) {
+                                                  provider.onChangeRadio(provider.currentIndex, value);
                                                 }
-                                              : null,
-                                        ),
+                                              }
+                                                  : null
+                                          ),
+                                          trailing: provider.isSubmitted[provider.currentIndex] == false
+                                              ? null : provider.isTrue![provider.currentIndex]
+                                              && 1 == provider.selectedOptions[provider.currentIndex]?
+                                          Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.correctAnswerOptionIndex![provider.currentIndex] == 1? Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.selectedOptions[provider.currentIndex] != 1? null: Icon(Icons.close, color: Colors.red, weight: 100)
                                       ),
                                       ListTile(
-                                        title: Text(
-                                            provider
-                                                .questions!
-                                                .questions[
-                                                    provider.currentIndex]
-                                                .option3
-                                                .replaceAll(
-                                                    RegExp(r'[a-d]\)'), '')
-                                                .trim(),
-                                            style: AppTextStyle.answerText),
-                                        leading: Radio<int>(
-                                          value: 2,
-                                          groupValue: provider.selectedOptions[
-                                              provider.currentIndex],
-                                          onChanged: provider.isTestStarted &&
-                                                  !provider.isSubmitted[
-                                                      provider.currentIndex]
-                                              ? (value) {
-                                                  if (value != null) {
-                                                    provider.onChangeRadio(
-                                                        provider.currentIndex,
-                                                        value);
-                                                  }
+                                          title: Text(
+                                              removeHtmlTags(currentQuestion.option3)
+                                                  .replaceAll(RegExp(r'[a-d]\)'), '')
+                                                  .trim(),
+                                              style: AppTextStyle.answerText),
+                                          leading: Radio<int>(
+                                            value: 2, // Current option value
+                                              groupValue: provider.isTestStarted
+                                                  ? provider.selectedOptions[provider.currentIndex]
+                                                  : null,
+                                              onChanged: (provider.isTestStarted && !provider.isSubmitted[provider.currentIndex])
+                                                  ? (value) {
+                                                if (value != null) {
+                                                  provider.onChangeRadio(provider.currentIndex, value);
                                                 }
-                                              : null,
-                                        ),
+                                              }
+                                                  : null
+                                          ),
+                                          trailing: provider.isSubmitted[provider.currentIndex] == false
+                                              ? null : provider.isTrue![provider.currentIndex]
+                                              && 2 == provider.selectedOptions[provider.currentIndex]?
+                                          Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.correctAnswerOptionIndex![provider.currentIndex] == 2? Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.selectedOptions[provider.currentIndex] != 2? null: Icon(Icons.close, color: Colors.red, weight: 100)
                                       ),
                                       ListTile(
-                                        title: Text(
-                                            provider
-                                                .questions!
-                                                .questions[
-                                                    provider.currentIndex]
-                                                .option4
-                                                .replaceAll(
-                                                    RegExp(r'[a-d]\)'), '')
-                                                .trim(),
-                                            style: AppTextStyle.answerText),
-                                        leading: Radio<int>(
-                                          value: 3,
-                                          groupValue: provider.selectedOptions[
-                                              provider.currentIndex],
-                                          onChanged: provider.isTestStarted &&
-                                                  !provider.isSubmitted[
-                                                      provider.currentIndex]
-                                              ? (value) {
-                                                  if (value != null) {
-                                                    provider.onChangeRadio(
-                                                        provider.currentIndex,
-                                                        value);
-                                                  }
+                                          title: Text(
+                                              removeHtmlTags(currentQuestion.option4)
+                                                  .replaceAll(RegExp(r'[a-d]\)'), '')
+                                                  .trim(),
+                                              style: AppTextStyle.answerText),
+                                          leading: Radio<int>(
+                                            value: 3,
+                                              groupValue: provider.isTestStarted
+                                                  ? provider.selectedOptions[provider.currentIndex]
+                                                  : null,
+                                              onChanged: (provider.isTestStarted && !provider.isSubmitted[provider.currentIndex])
+                                                  ? (value) {
+                                                if (value != null) {
+                                                  provider.onChangeRadio(provider.currentIndex, value);
                                                 }
-                                              : null,
-                                        ),
+                                              }
+                                                  : null
+                                          ),
+                                          trailing: provider.isSubmitted[provider.currentIndex] == false
+                                              ? null : provider.isTrue![provider.currentIndex]
+                                              && 3 == provider.selectedOptions[provider.currentIndex]?
+                                          Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.correctAnswerOptionIndex![provider.currentIndex] == 3? Icon(Icons.check, color: Colors.green, weight: 100):
+                                          provider.selectedOptions[provider.currentIndex] != 3? null: Icon(Icons.close, color: Colors.red, weight: 100)
                                       ),
                                       SizedBox(height: 10),
                                       Row(
@@ -299,7 +335,12 @@ class MockTestScreenState extends State<MockTestScreen> {
                                       ElevatedButton(
                                         onPressed: () => showFeedbackDialog(
                                             context,
-                                            (provider.currentIndex + 1)),
+                                            authProvider.userSession!.userId,
+                                            authProvider.userSession!.testId,
+                                            provider
+                                                .questionList[
+                                                    provider.currentIndex]
+                                                .id),
                                         style: ElevatedButton.styleFrom(
                                           foregroundColor: Colors.white,
                                           backgroundColor:
@@ -321,6 +362,7 @@ class MockTestScreenState extends State<MockTestScreen> {
                                           Text('Show Explanation',
                                               style: AppTextStyle.questionText),
                                           Switch(
+                                            activeColor: AppColors.primaryColor,
                                               value: provider.showExplanation[
                                                   provider.currentIndex],
                                               onChanged: (value) => provider
@@ -347,16 +389,28 @@ class MockTestScreenState extends State<MockTestScreen> {
                           ],
                         )));
   }
-
-  void showFeedbackDialog(BuildContext context, int questionNum) {
+  void showFeedbackDialog(
+      BuildContext context, int userId, int testId, int questionId) {
     final formKey = GlobalKey<FormState>();
     TextEditingController feedbackController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Share Feedback',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20), // Rounded corners
+        ),
+        title: Center(
+          child: Text(
+            'Share Feedback',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        contentPadding: EdgeInsets.all(20),
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -368,9 +422,13 @@ class MockTestScreenState extends State<MockTestScreen> {
                   decoration: InputDecoration(
                     labelText: 'Your Feedback',
                     hintText: 'Enter any issues or suggestions',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100], // Soft background inside input
                   ),
-                  maxLines: 4,
+                  maxLines: 5,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your feedback';
@@ -378,24 +436,42 @@ class MockTestScreenState extends State<MockTestScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState?.validate() ?? false) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Feedback Submitted Successfully! quetion number is $questionNum')),
-                      );
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    backgroundColor: AppColors.primaryColor,
+                SizedBox(height: 25),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (formKey.currentState?.validate() ?? false) {
+                        Map<String, dynamic> data = {
+                          "user_id": userId,
+                          "test_id": testId,
+                          "question_id": questionId,
+                          "detail": feedbackController.text
+                        };
+                        final feedbackProvider =
+                        Provider.of<FeedbackProvider>(context, listen: false);
+                        await feedbackProvider.giveMockTestFeedback(context, data);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Submit Feedback',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  child:
-                      Text('Submit', style: AppTextStyle.subscriptionTitleText),
                 ),
               ],
             ),
@@ -404,4 +480,5 @@ class MockTestScreenState extends State<MockTestScreen> {
       ),
     );
   }
+
 }

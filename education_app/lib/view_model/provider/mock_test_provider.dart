@@ -1,5 +1,7 @@
 import 'package:education_app/resources/exports.dart';
 
+import '../../model/hive_database_model/submitted_questions_model.dart';
+
 class MockTestProvider with ChangeNotifier {
   final QuestionRepository _mockTestRepo = QuestionRepository();
 
@@ -58,8 +60,101 @@ class MockTestProvider with ChangeNotifier {
   bool _shouldNavigate = false;
   bool get shouldNavigate => _shouldNavigate;
 
-  void goBack() {
-    restartTest();
+  List<Map<String, dynamic>> _questionsToPost = [];
+  List<Map<String, dynamic>> get questionsToPost => _questionsToPost;
+
+  List<bool>? _isTrue;
+  List<bool>? get isTrue => _isTrue;
+
+  List<int>? _correctAnswerOptionIndex;
+  List<int>? get correctAnswerOptionIndex => _correctAnswerOptionIndex;
+
+  void goBack(context) {
+    _questionsToPost = [];
+    Navigator.pop(context);
+    notifyListeners();
+  }
+
+  void setNumberOfQuestion(double value) {
+    _numberOfQuestions = value.toInt();
+    if (kDebugMode) {
+      print("_numberOfQuestions = $_numberOfQuestions");
+    }
+    notifyListeners();
+  }
+
+  void submitAnswer(BuildContext context, int index) {
+    if (_selectedOptions.isNotEmpty &&
+        index < _selectedOptions.length &&
+        _selectedOptions[index] != null) {
+      if (_isSubmitted.isNotEmpty &&
+          index >= 0 &&
+          index < _isSubmitted.length) {
+        _isSubmitted[index] = true;
+      } else {
+        debugPrint('Index out of bounds while submitting answer');
+      }
+
+      if (_questionList.isNotEmpty && index < _questionList.length) {
+        String correctAnswerKey =
+            _questionList[index].correctAnswer.toLowerCase();
+        int? correctAnswerIndex = correctOptionMapping[correctAnswerKey];
+        _correctAnswerOptionIndex![index] = correctAnswerIndex!;
+        String result = (_selectedOptions[index] == correctAnswerIndex)
+            ? "correct"
+            : "incorrect";
+
+        if (_selectedOptions[index] == correctAnswerIndex) {
+          _correctAns++;
+          _isTrue![index] = true;
+        } else {
+          _incorrectAns++;
+          _isTrue![index] = false;
+        }
+
+        int questionId = _questionList[index].id ?? 0;
+        bool exists =
+            _questionsToPost.any((q) => q['question_id'] == questionId);
+
+        if (exists) {
+          _questionsToPost.firstWhere(
+                  (q) => q['question_id'] == questionId)['question_result'] =
+              result;
+        } else {
+          _questionsToPost.add({
+            'question_id': questionId,
+            'question_result': result,
+            "question_status": "Mock"
+          });
+        }
+      }
+      notifyListeners();
+      print('data of questions is =>>>> $_questionsToPost');
+
+      bool allSubmitted = _isSubmitted.every((submitted) => submitted == true);
+
+      if (allSubmitted) {
+        Future.microtask(() {
+          Navigator.pushReplacementNamed(
+            context,
+            RoutesName.resultScreen,
+            arguments: {
+              'correctAns': _correctAns,
+              'incorrectAns': _incorrectAns,
+              'totalQuestion': _numberOfQuestions,
+              'questions': _questionsToPost
+            },
+          );
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select an option before submitting!"),
+        ),
+      );
+    }
+
     notifyListeners();
   }
 
@@ -74,20 +169,32 @@ class MockTestProvider with ChangeNotifier {
     }
   }
 
-  navigate(BuildContext context) {
+  void navigate(BuildContext context) async {
     if (_shouldNavigate) {
       _isTestStarted = false;
-      final _provider = Provider.of<ChapterProvider>(context, listen: false);
-      _subject = _provider.subject;
-      Navigator.pushReplacementNamed(context, RoutesName.resultScreen,
-          arguments: {
-            'subject': _subject,
-            'correctAns': _correctAns,
-            'incorrectAns': _incorrectAns,
-            'totalQuestion': _numberOfQuestions
-          });
+
+      final provider = Provider.of<ChapterProvider>(context, listen: false);
+      _subject = provider.subject;
+
+      List<Map<String, dynamic>> questionsToSend =
+          List<Map<String, dynamic>>.from(_questionsToPost);
+
+      await Navigator.pushReplacementNamed(
+        context,
+        RoutesName.resultScreen,
+        arguments: {
+          'subject': _subject,
+          'correctAns': _correctAns,
+          'incorrectAns': _incorrectAns,
+          'totalQuestion': _numberOfQuestions,
+          'questions': questionsToSend,
+        },
+      );
+
+      _questionsToPost = [];
+
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> fetchQuestions(BuildContext context) async {
@@ -120,6 +227,8 @@ class MockTestProvider with ChangeNotifier {
         _numberOfQuestions = _questionList.length;
         _selectedOptions = List<int?>.filled(_questionList.length, null);
         _isSubmitted = List<bool>.filled(_questionList.length, false);
+        _isTrue = List<bool>.filled(_questionList.length, false);
+        _correctAnswerOptionIndex = List<int>.filled(_numberOfQuestions!, 0);
         _showExplanation = List<bool>.filled(_questionList.length, false);
       }
     } catch (error) {
@@ -135,52 +244,6 @@ class MockTestProvider with ChangeNotifier {
         notifyListeners();
       });
     }
-  }
-
-  void submitAnswer(BuildContext context, int index) {
-    if (_selectedOptions.isNotEmpty &&
-        index < _selectedOptions.length &&
-        _selectedOptions[index] != null) {
-      if (_isSubmitted.isNotEmpty && index < _isSubmitted.length) {
-        _isSubmitted[index] = true;
-      }
-
-      if (_questionList.isNotEmpty && index < _questionList.length) {
-        String correctAnswerKey =
-            _questionList[index].correctAnswer.toLowerCase();
-        int? correctAnswerIndex = correctOptionMapping[correctAnswerKey];
-
-        if (_selectedOptions[index] == correctAnswerIndex) {
-          _correctAns++;
-        } else {
-          _incorrectAns++;
-        }
-      }
-
-      bool allSubmitted = _isSubmitted.every((submitted) => submitted == true);
-
-      if (allSubmitted) {
-        Future.microtask(() {
-          Navigator.pushReplacementNamed(
-            context,
-            RoutesName.resultScreen,
-            arguments: {
-              'correctAns': _correctAns,
-              'incorrectAns': _incorrectAns,
-              'totalQuestion': _numberOfQuestions
-            },
-          );
-        });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select an option before submitting!"),
-        ),
-      );
-    }
-
-    notifyListeners();
   }
 
   void restartTest() {
