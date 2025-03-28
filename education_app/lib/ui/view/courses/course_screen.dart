@@ -31,7 +31,7 @@ class _CourseScreenState extends State<CourseScreen> {
               Navigator.pushNamed(context, RoutesName.home);
             },
             icon: const Icon(
-              Icons.arrow_back,
+              Icons.arrow_back_ios,
               color: Colors.black,
             ),
           ),

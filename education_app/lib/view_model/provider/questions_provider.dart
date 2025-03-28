@@ -40,18 +40,14 @@ class QuestionsProvider with ChangeNotifier {
     "d": 3,
   };
 
-  List<int>? _correctAnswerOptionIndex;
-  List<int>? get correctAnswerOptionIndex => _correctAnswerOptionIndex;
+  Map<int, int> _correctAnswerOptionIndex = {};
+  Map<int, int> get correctAnswerOptionIndex => _correctAnswerOptionIndex;
 
   int? _numberOfQuestions;
   int? get numberOfQuestions => _numberOfQuestions;
 
-  // List<bool> _isSubmitted = [];
-  // List<bool> get isSubmitted => _isSubmitted;
-
   Map<int, bool> _isSubmitted = {};
   Map<int, bool> get isSubmitted => _isSubmitted;
-
 
   int _correctAns = 0;
   int get correctAns => _correctAns;
@@ -65,12 +61,8 @@ class QuestionsProvider with ChangeNotifier {
   bool _isTestStarted = false;
   bool get isTestStarted => _isTestStarted;
 
-  // List<int?> _selectedOptions = [];
-  // List<int?> get selectedOptions => _selectedOptions;
-
-  Map<int,int> _selectedOptions = {};
-  Map<int,int> get selectedOptions => _selectedOptions;
-
+  Map<int, int> _selectedOptions = {};
+  Map<int, int> get selectedOptions => _selectedOptions;
 
   List<bool> _showExplanation = [];
   List<bool> get showExplanation => _showExplanation;
@@ -92,9 +84,6 @@ class QuestionsProvider with ChangeNotifier {
 
   bool _shouldNavigate = false;
   bool get shouldNavigate => _shouldNavigate;
-
-  // List<bool>? _isTrue;
-  // List<bool>? get isTrue => _isTrue;
 
   Map<int, bool> _isTrue = {};
   Map<int, bool> get isTrue => _isTrue;
@@ -120,6 +109,23 @@ class QuestionsProvider with ChangeNotifier {
   GetCheckedQuestionModel? _getCheckedQuestionModel;
   GetCheckedQuestionModel? get getCheckedQuestionModel =>
       _getCheckedQuestionModel;
+
+  bool _isQuestionsAllSubmitted = false;
+
+  void getSelectedOptions() {
+    _selectedOptions.clear();
+
+    for (var entry in box.values) {
+      int questionId = entry.questionId ?? -1;
+      int selectedOption = entry.selectedOption ?? -1;
+
+      if (questionId != -1 && selectedOption != -1) {
+        _selectedOptions[questionId] = selectedOption;
+      }
+    }
+
+    notifyListeners();
+  }
 
   Future<void> getCheckedQuestions(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -249,7 +255,11 @@ class QuestionsProvider with ChangeNotifier {
 
     switch (filterType) {
       case FilterType.incorrect:
-        await fetchIncorrectQuestions(context, subjectId!, chapterId);
+        if (!_isQuestionsAllSubmitted) {
+          showIncorrectQuestionLocally(context);
+        } else {
+          await fetchIncorrectQuestions(context, subjectId!, chapterId);
+        }
         break;
       case FilterType.marked:
         await fetchQuestions(context, subjectId!, chapterId);
@@ -258,10 +268,6 @@ class QuestionsProvider with ChangeNotifier {
         _filteredQuestions =
             _filteredQuestions.where((q) => _checkMap[q.id] == true).toList();
         _numberOfQuestions = _filteredQuestions.length;
-        _correctAnswerOptionIndex = List<int>.filled(_numberOfQuestions!, 0);
-        // _selectedOptions = List<int?>.filled(_numberOfQuestions!, null);
-        // _isTrue = List<bool>.filled(_numberOfQuestions!, false);
-        // _isSubmitted = List<bool>.filled(_numberOfQuestions!, false);
         _showExplanation = List<bool>.filled(_numberOfQuestions!, false);
         // } else {
         //   print("No marked questions found or invalid response.");
@@ -277,7 +283,7 @@ class QuestionsProvider with ChangeNotifier {
       case FilterType.all:
       default:
         await fetchQuestions(context, subjectId!, chapterId);
-        // await getCheckedQuestions(context);
+        await getCheckedQuestions(context);
         break;
     }
     notifyListeners();
@@ -323,10 +329,6 @@ class QuestionsProvider with ChangeNotifier {
 
         _filteredQuestions = List.from(_incorrectQuestions);
         _numberOfQuestions = _filteredQuestions.length;
-        _correctAnswerOptionIndex = List<int>.filled(_numberOfQuestions!, 0);
-        // _selectedOptions = List<int?>.filled(_numberOfQuestions!, null);
-        // _isTrue = List<bool>.filled(_numberOfQuestions!, false);
-        // _isSubmitted = List<bool>.filled(_numberOfQuestions!, false);
         _showExplanation = List<bool>.filled(_numberOfQuestions!, false);
       } else {
         debugPrint("Response contains no questions.");
@@ -370,12 +372,12 @@ class QuestionsProvider with ChangeNotifier {
         _questionList = _questions!.questions;
         _filteredQuestions = List.from(_questionList);
         _numberOfQuestions = _questionList.length;
-        _correctAnswerOptionIndex = List<int>.filled(_numberOfQuestions!, 0);
-        // _selectedOptions = List<int?>.filled(_numberOfQuestions!, null);
-        // _isTrue = List<bool>.filled(_numberOfQuestions!, false);
-        // _isSubmitted = List<bool>.filled(_numberOfQuestions!, false);
+        // for (var i in _questionList) {
+        //   if (!_restQuestionData.contains(i.id)) {
+        //     _restQuestionData.add(i.id);
+        //   }
+        // }
         _showExplanation = List<bool>.filled(_numberOfQuestions!, false);
-        // await getCheckedQuestions(context);
       } else {
         _questions = null;
         _questionList = [];
@@ -392,134 +394,151 @@ class QuestionsProvider with ChangeNotifier {
     }
   }
 
-  // void submitAnswer(BuildContext context, int index) {
-  //   if (_selectedOptions.isNotEmpty &&
-  //       index < _selectedOptions.length &&
-  //       _selectedOptions[index] != null) {
-  //     if (_isSubmitted.isNotEmpty &&
-  //         index >= 0 &&
-  //         index < _isSubmitted.length) {
-  //       _isSubmitted[index] = true;
-  //     } else {
-  //       debugPrint('Index out of bounds while submitting answer');
-  //     }
-  //
-  //     if (_questionList.isNotEmpty && index < _questionList.length) {
-  //       String correctAnswerKey =
-  //           _questionList[index].correctAnswer.toLowerCase();
-  //       int? correctAnswerIndex = correctOptionMapping[correctAnswerKey];
-  //       _correctAnswerOptionIndex![index] = correctAnswerIndex!;
-  //       String result = (_selectedOptions[index] == correctAnswerIndex)
-  //           ? "correct"
-  //           : "incorrect";
-  //
-  //       if (_selectedOptions[index] == correctAnswerIndex) {
-  //         _correctAns++;
-  //         addToSubmittedQuestions(context, _questionList[index].id, "correct",
-  //             _selectedOptions[index]!);
-  //         _isTrue![index] = true;
-  //       } else {
-  //         _incorrectAns++;
-  //         addToSubmittedQuestions(context, _questionList[index].id, "incorrect",
-  //             _selectedOptions[index]!);
-  //         _isTrue![index] = false;
-  //       }
-  //       int questionId = _questionList[index].id;
-  //
-  //       bool existsInHive = false;
-  //       String? questionResult;
-  //       for (var question in box.values) {
-  //         if (question.questionId == questionId) {
-  //           existsInHive = true;
-  //           questionResult = question.questionResult;
-  //           break;
-  //         }
-  //       }
-  //
-  //       if (existsInHive) {
-  //         bool existsInList =
-  //             _questionsToPost.any((q) => q['question_id'] == questionId);
-  //
-  //         if (!existsInList) {
-  //           _questionsToPost.add({
-  //             'question_id': questionId,
-  //             'question_result': questionResult ?? '',
-  //             "question_status": "Not Mock"
-  //           });
-  //         }
-  //       }
-  //       bool exists =
-  //           _questionsToPost.any((q) => q['question_id'] == questionId);
-  //
-  //       if (exists) {
-  //         _questionsToPost.firstWhere(
-  //                 (q) => q['question_id'] == questionId)['question_result'] =
-  //             result;
-  //       } else {
-  //         _questionsToPost.add({
-  //           'question_id': questionId,
-  //           'question_result': result,
-  //           "question_status": "Not Mock"
-  //         });
-  //       }
-  //     }
-  //     print('data of questions is =>>>> $questionsToPost');
-  //
-  //     for (int i = 0; i < _questionList.length; i++) {
-  //       bool isSubmittedInHive =
-  //           isQuestionAlreadySubmitted(_questionList[i].id);
-  //       if (isSubmittedInHive) {
-  //         _isSubmitted[i] = true;
-  //       }
-  //     }
-  //
-  //     bool allSubmitted = _isSubmitted.every((submitted) => submitted == true);
-  //     print("allSubmitted ===> $allSubmitted");
-  //
-  //     if (allSubmitted) {
-  //       Future.microtask(() {
-  //         Navigator.pushReplacementNamed(
-  //           context,
-  //           RoutesName.resultScreen,
-  //           arguments: {
-  //             'correctAns': _correctAns,
-  //             'incorrectAns': _incorrectAns,
-  //             'totalQuestion': _numberOfQuestions,
-  //             'questions': _questionsToPost
-  //           },
-  //         );
-  //       });
-  //     }
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text("Please select an option before submitting!"),
-  //       ),
-  //     );
-  //   }
-  //
-  //   notifyListeners();
-  // }
+  void showIncorrectQuestionLocally(BuildContext context) async {
+    _filteredQuestions.clear();
 
-  Future<void> removeAllDataByChapterId(int chapterIdToRemove) async {
-    var box =
-        await Hive.openBox<SubmittedQuestionsModel>('submittedQuestionsBox');
-
-    for (var item in box.values) {
-      if (item.chapterId == chapterIdToRemove && item.isInBox) {
-        await item.delete(); // Only delete if the item is still in the box
-      }
-    }
-
-    print('All entries with chapterId = $chapterIdToRemove have been removed.');
-  }
-
-  void addToSubmittedQuestions(
-      context, int questionId, String questionResult, int selectedOption) {
-    var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
     final chapterProvider =
         Provider.of<ChapterProvider>(context, listen: false);
     final chapterId = chapterProvider.chapterId;
+
+    final incorrectQuestionsFromHive = box.values
+        .where(
+            (q) => q.chapterId == chapterId && q.questionResult == "incorrect")
+        .toList();
+
+    for (var question in _questionList) {
+      int questionId = question.id;
+
+      bool isIncorrect =
+          incorrectQuestionsFromHive.any((q) => q.questionId == questionId);
+
+      if (isIncorrect) {
+        _filteredQuestions.add(question);
+      }
+    }
+
+    _numberOfQuestions = _filteredQuestions.length;
+    _showExplanation = List<bool>.filled(_numberOfQuestions!, false);
+
+    print(
+        'Filtered Incorrect Questions for current chapter: ${_filteredQuestions.length}');
+    notifyListeners();
+  }
+
+  void submitAnswer(BuildContext context, int questionId) {
+    if (_selectedOptions.containsKey(questionId) &&
+        _selectedOptions[questionId] != null) {
+      _isSubmitted[questionId] = true;
+
+      if (_filteredQuestions.isNotEmpty) {
+        Question question =
+            _filteredQuestions.firstWhere((q) => q.id == questionId);
+        String correctAnswerKey = question.correctAnswer.toLowerCase();
+        int correctAnswerIndex = correctOptionMapping[correctAnswerKey] ?? -1;
+
+        _correctAnswerOptionIndex[questionId] = correctAnswerIndex;
+
+        String result = (_selectedOptions[questionId] == correctAnswerIndex)
+            ? "correct"
+            : "incorrect";
+
+        if (result == "correct") {
+          _correctAns++;
+          _isTrue[questionId] = true;
+        } else {
+          _incorrectAns++;
+          _isTrue[questionId] = false;
+        }
+
+        final chapterProvider =
+            Provider.of<ChapterProvider>(context, listen: false);
+        final chapterId = chapterProvider.chapterId;
+
+        // Store data in Hive, avoid duplicates
+        if (!box.values.any(
+            (q) => q.questionId == questionId && q.chapterId == chapterId)) {
+          addToSubmittedQuestions(context, questionId, result,
+              _selectedOptions[questionId]!, chapterId);
+        }
+
+        // Only include current chapter's questions in _questionsToPost
+        List<Map<String, dynamic>> filteredQuestionsToPost = box.values
+            .where((q) => q.chapterId == chapterId)
+            .map((q) => {
+                  'question_id': q.questionId,
+                  'question_result': q.questionResult,
+                  'question_status': 'Not Mock',
+                })
+            .toList();
+
+        print(
+            'Filtered questions for current chapter =>>>> $filteredQuestionsToPost');
+
+        // Calculate total questions and check for all submissions for the current chapter
+        int totalQuestionsInChapter = _filteredQuestions.length;
+        int submittedQuestionsCount =
+            box.values.where((q) => q.chapterId == chapterId).length;
+
+        bool allQuestionsInChapterSubmitted =
+            submittedQuestionsCount == totalQuestionsInChapter;
+
+        print(
+            "All questions in current chapter submitted: $allQuestionsInChapterSubmitted");
+
+        if (allQuestionsInChapterSubmitted) {
+          _isQuestionsAllSubmitted = true;
+          Future.microtask(() {
+            Navigator.pushReplacementNamed(
+              context,
+              RoutesName.resultScreen,
+              arguments: {
+                'correctAns': filteredQuestionsToPost
+                    .where((q) => q['question_result'] == 'correct')
+                    .length,
+                'incorrectAns': filteredQuestionsToPost
+                    .where((q) => q['question_result'] == 'incorrect')
+                    .length,
+                'totalQuestion': totalQuestionsInChapter,
+                'questions': filteredQuestionsToPost,
+              },
+            );
+          });
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select an option before submitting!"),
+        ),
+      );
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> removeAllDataByChapterId(int chapterId) async {
+    try {
+      final questionsToRemove =
+          box.values.where((q) => q.chapterId == chapterId).toList();
+
+      for (var question in questionsToRemove) {
+        await box.delete(question.key);
+
+        _selectedOptions.remove(question.questionId);
+        _isSubmitted.remove(question.questionId);
+        _isTrue.remove(question.questionId);
+      }
+
+      notifyListeners();
+      print("All data with chapterId $chapterId removed.");
+    } catch (e) {
+      print("Error removing data by chapterId: $e");
+    }
+  }
+
+  void addToSubmittedQuestions(context, int questionId, String questionResult,
+      int selectedOption, int chapterId) {
+    var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
     var question = SubmittedQuestionsModel(
         questionId: questionId,
         questionResult: questionResult,
@@ -585,11 +604,10 @@ class QuestionsProvider with ChangeNotifier {
     }
   }
 
-  void onChangeRadio(int questionId, int? value) {
-    if (_isSubmitted.isNotEmpty && !_isSubmitted[questionId]!) {
-      if (_selectedOptions.isNotEmpty) {
-        _selectedOptions[questionId] = value!;
-      }
+  void onChangeRadio(int questionId, int value) {
+    if (!_isSubmitted.containsKey(questionId) ||
+        _isSubmitted[questionId] == false) {
+      _selectedOptions[questionId] = value;
       notifyListeners();
     }
   }
@@ -609,11 +627,8 @@ class QuestionsProvider with ChangeNotifier {
   void resetProvider() {
     _correctAns = 0;
     _incorrectAns = 0;
-    clearSubmittedQuestions();
-
+    // clearSubmittedQuestions();
     if (_numberOfQuestions != null && _numberOfQuestions! > 0) {
-      // _selectedOptions = List<int?>.filled(_numberOfQuestions!, null);
-      // _isSubmitted = List<bool>.filled(_numberOfQuestions!, false);
       _showExplanation = List<bool>.filled(_numberOfQuestions!, false);
     }
 

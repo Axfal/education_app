@@ -23,6 +23,7 @@ class ResultScreen extends StatefulWidget {
 }
 
 class _ResultScreenState extends State<ResultScreen> {
+  bool _hasPostedResult = false;
   bool isPass = false;
   int percentage = 0;
   late Map<String, double> dataMap;
@@ -38,9 +39,13 @@ class _ResultScreenState extends State<ResultScreen> {
     });
   }
 
+
   void postTestResult() async {
+    if (_hasPostedResult) return;  // Prevent duplicate posting
+    _hasPostedResult = true;       // Mark as posted
+
     final provider =
-        Provider.of<PostTestResultProvider>(context, listen: false);
+    Provider.of<PostTestResultProvider>(context, listen: false);
     print(widget.questions);
     if (widget.questions.isNotEmpty) {
       await provider.postTestResult(context, widget.questions);
@@ -49,19 +54,24 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+
   void setMapData() {
     dataMap = {
       'Correct': widget.correctAns.toDouble(),
       'Incorrect': widget.incorrectAns.toDouble(),
-      'Unattempted': max(
-        0,
-        widget.totalQues.toDouble()+1 - (widget.correctAns + widget.incorrectAns),
-      ),
+      'Unattempted': widget.totalQues > 0
+          ? widget.totalQues.toDouble() - (widget.correctAns + widget.incorrectAns)
+          : 0.0,  // Handle zero division safely
     };
   }
 
+
   void isPassed() {
-    final percent = (widget.correctAns / widget.totalQues) * 100;
+    // Avoid division by zero by checking if totalQues is greater than 0
+    final percent = widget.totalQues > 0
+        ? (widget.correctAns / widget.totalQues) * 100
+        : 0.0;
+
     percentage = percent.toInt();
     isPass = percentage > 37;
   }

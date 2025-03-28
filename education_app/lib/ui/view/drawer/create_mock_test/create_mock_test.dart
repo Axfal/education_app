@@ -65,7 +65,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back, color: AppColors.textColor)),
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.textColor)),
       ),
       body: subjects.isEmpty
           ? Center(
@@ -156,6 +156,19 @@ class _CreateMockTestState extends State<CreateMockTest> {
                                         } else {
                                           selectedSubjectIds.remove(subjectId);
                                         }
+
+                                        // Check if both fields have valid values and hit API
+                                        if (selectedSubjectIds.isNotEmpty &&
+                                            selectedQuestion != null) {
+                                          provider.getMockTestQuestionsCount(
+                                            context,
+                                            selectedSubjectIds
+                                                .map((id) =>
+                                                    int.tryParse(id) ?? -1)
+                                                .toList(),
+                                            selectedQuestion!,
+                                          );
+                                        }
                                       });
                                     },
                                   ),
@@ -186,6 +199,21 @@ class _CreateMockTestState extends State<CreateMockTest> {
                                     onChanged: (value) {
                                       setState(() {
                                         selectedQuestion = value;
+                                        final provider =
+                                            Provider.of<CreateMockTestProvider>(
+                                                context,
+                                                listen: false);
+                                        if (selectedSubjectIds.isNotEmpty &&
+                                            selectedQuestion != null) {
+                                          provider.getMockTestQuestionsCount(
+                                            context,
+                                            selectedSubjectIds
+                                                .map((id) =>
+                                                    int.tryParse(id) ?? -1)
+                                                .toList(),
+                                            selectedQuestion!,
+                                          );
+                                        }
                                       });
                                     },
                                   ),
@@ -198,7 +226,6 @@ class _CreateMockTestState extends State<CreateMockTest> {
                                       SizedBox(
                                         width: 10,
                                       ),
-                                      // numIcon('445')
                                     ],
                                   ),
                                 )),
@@ -208,8 +235,15 @@ class _CreateMockTestState extends State<CreateMockTest> {
                     ),
                   ),
                 ),
+                // Slider with Plus and Minus Buttons
+                // Slider with Plus and Minus Buttons
                 Consumer<CreateMockTestProvider>(
                   builder: (context, provider, child) {
+                    final totalQuestions = provider.availableQuestions ?? 0;
+                    final maxQuestions = totalQuestions > 0 ? totalQuestions.toDouble() : 1.0;
+                    final minQuestions = 1.0;
+                    final clampedValue = provider.numberOfQuestions.toDouble().clamp(minQuestions, maxQuestions);
+
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Card(
@@ -221,24 +255,44 @@ class _CreateMockTestState extends State<CreateMockTest> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Slider(
-                                    activeColor: AppColors.primaryColor,
-                                    value: provider.numberOfQuestions
-                                        .toDouble()
-                                        .clamp(10.0, 100.0),
-                                    min: 10,
-                                    max: 100,
-                                    divisions: 99,
-                                    label: provider.numberOfQuestions
-                                        .round()
-                                        .toString(),
-                                    onChanged: (value) {
-                                      provider.setNumberOfQuestion(value);
-                                    },
+                                  // Row with minus button, slider, and plus button
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.remove),
+                                        onPressed: provider.numberOfQuestions > minQuestions
+                                            ? () => provider.setNumberOfQuestion(provider.numberOfQuestions - 1)
+                                            : null,
+                                      ),
+                                      Expanded(
+                                        child: Slider(
+                                          activeColor: AppColors.primaryColor,
+                                          value: clampedValue,
+                                          min: minQuestions,
+                                          max: maxQuestions,
+                                          divisions: totalQuestions > 1
+                                              ? (maxQuestions - minQuestions).toInt()
+                                              : null,
+                                          label: '${provider.numberOfQuestions.round()}',
+                                          onChanged: totalQuestions > 0
+                                              ? (value) => provider.setNumberOfQuestion(value.round().toDouble())
+                                              : null,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.add),
+                                        onPressed: provider.numberOfQuestions < maxQuestions
+                                            ? () => provider.setNumberOfQuestion(provider.numberOfQuestions + 1)
+                                            : null,
+                                      ),
+                                    ],
                                   ),
                                   SizedBox(height: 8.0),
                                   Text(
-                                    'Selected: ${provider.numberOfQuestions.round()} questions',
+                                    totalQuestions > 0
+                                        ? 'Selected: ${provider.numberOfQuestions.round()} questions'
+                                        : 'No questions available for the selected criteria',
                                   ),
                                 ],
                               ),
@@ -248,7 +302,9 @@ class _CreateMockTestState extends State<CreateMockTest> {
                       ),
                     );
                   },
-                ),
+                )
+                ,
+
                 Consumer<CreateMockTestProvider>(
                     builder: (context, provider, child) {
                   return Align(
@@ -264,8 +320,7 @@ class _CreateMockTestState extends State<CreateMockTest> {
                                   .map((id) => int.tryParse(id) ?? -1)
                                   .where((id) => id != -1)
                                   .toList();
-                              print(
-                                  "Subjects IDs are these ======> $subjectIds");
+                              print("Subjects IDs are these $subjectIds");
                               Navigator.pushReplacementNamed(
                                 context,
                                 RoutesName.createdMockTestScreen,
@@ -306,12 +361,4 @@ class _CreateMockTestState extends State<CreateMockTest> {
             ),
     );
   }
-
-  Widget numIcon(String title) => Container(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-        decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(20)),
-        child: Text(title, style: AppTextStyle.subscriptionDetailText),
-      );
 }

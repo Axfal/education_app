@@ -49,7 +49,7 @@ class _ChaptersScreenState extends State<ChaptersScreen> {
             provider.reset();
             Navigator.pop(context);
           },
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
         ),
       ),
       body: provider.chapterName.isEmpty

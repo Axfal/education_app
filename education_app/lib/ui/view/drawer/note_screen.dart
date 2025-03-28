@@ -20,6 +20,12 @@ class _NoteScreenState extends State<NoteScreen> {
         title: Text('Notes', style: AppTextStyle.appBarText),
         centerTitle: true,
         backgroundColor: AppColors.primaryColor,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+        ),
       ),
       body: ValueListenableBuilder<Box<NotesModel>>(
         valueListenable: Boxes.getData().listenable(),
@@ -112,6 +118,8 @@ class _NoteScreenState extends State<NoteScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          titleController.clear();
+          descriptionController.clear();
           _showMyDialog();
         },
         backgroundColor: AppColors.primaryColor,

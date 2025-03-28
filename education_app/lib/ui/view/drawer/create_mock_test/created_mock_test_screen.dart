@@ -88,7 +88,7 @@ class CreatedMockTestScreenState extends State<CreatedMockTestScreen> {
               provider.restartTest();
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back_outlined)),
+            icon: Icon(Icons.arrow_back_ios)),
         title: Text(
           'Mock Test',
           style: AppTextStyle.appBarText,

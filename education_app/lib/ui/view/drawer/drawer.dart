@@ -11,10 +11,12 @@ Widget drawerWidget(BuildContext context, ProfileProvider userdata) => Drawer(
             final String baseUrl =
                 "https://nomore.com.pk/MDCAT_ECAT_Education/API/";
             String? profileImage = userdata.profileModel?.user?.profileImage;
-            String defaultImageUrl = 'https://storage.needpix.com/rsynced_images/head-659651_1280.png';
-            String imageUrl = (profileImage != null && profileImage.startsWith('http'))
-                ? profileImage
-                : '$baseUrl$profileImage';
+            String defaultImageUrl =
+                'https://storage.needpix.com/rsynced_images/head-659651_1280.png';
+            String imageUrl =
+                (profileImage != null && profileImage.startsWith('http'))
+                    ? profileImage
+                    : '$baseUrl$profileImage';
 
             if (profileImage == null || profileImage.isEmpty) {
               imageUrl = defaultImageUrl;
@@ -65,6 +67,9 @@ Widget drawerWidget(BuildContext context, ProfileProvider userdata) => Drawer(
               }, Icons.book_outlined),
               drawerItems('Help', () {}, Icons.help_outline_outlined),
               drawerItems('Sign  Out', () {
+                final questionProvider =
+                    Provider.of<QuestionsProvider>(context, listen: false);
+                questionProvider.clearSubmittedQuestions();
                 logOut(context);
               }, Icons.logout),
             ]);

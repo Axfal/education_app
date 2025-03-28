@@ -1,19 +1,22 @@
 // ignore_for_file: avoid_print
 
+import 'package:education_app/repository/mock_test_question_count_repo.dart';
 import 'package:education_app/resources/exports.dart';
 import '../../model/create_mock_test_model.dart';
 import '../../model/hive_database_model/submitted_questions_model.dart';
+import '../../model/mock_test_question_count_model.dart';
 import '../../repository/create_mock_test_repo.dart';
 
 class CreateMockTestProvider with ChangeNotifier {
   CreateMockTestRepo createMockTestRepo = CreateMockTestRepo();
+  MockTestQuestionCountRepo mockTestQuestionRepo = MockTestQuestionCountRepo();
 
   var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
 
   List<Questions> _questionList = [];
   List<Questions> get questionList => _questionList;
 
-  int _timeInSeconds = 30;
+  int _timeInSeconds = 45;
   int get timeInSeconds => _timeInSeconds;
 
   int _endTime = DateTime.now().millisecondsSinceEpoch + 10000;
@@ -26,7 +29,7 @@ class CreateMockTestProvider with ChangeNotifier {
     "d": 3
   };
 
-  int _numberOfQuestions = 10;
+  int _numberOfQuestions = 1;
   int get numberOfQuestions => _numberOfQuestions;
 
   List<bool> _isSubmitted = [];
@@ -74,6 +77,51 @@ class CreateMockTestProvider with ChangeNotifier {
   CreateMockTestModel? _createMockTestModel;
   CreateMockTestModel? get createMockTestModel => _createMockTestModel;
 
+  int? _availableQuestions;
+  bool _isLoading = false;
+  MockTestQuestionCountModel? _mockTestQuestionCountModel;
+
+  int? get availableQuestions => _availableQuestions;
+  bool get isLoading => _isLoading;
+
+  Future<void> getMockTestQuestionsCount(
+      BuildContext context, List<int> subjectMode, String questionMode) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.userSession?.userId;
+    final testId = authProvider.userSession?.testId;
+
+    if (userId == null || testId == null) {
+      debugPrint("User or test information is missing.");
+      return;
+    }
+
+    _isLoading = true;
+    notifyListeners(); // Notify listeners about loading state
+
+    try {
+      Map<String, dynamic> data = {
+        "user_id": userId,
+        "test_id": testId,
+        "subject_id": subjectMode,
+        "question_mode": questionMode
+      };
+
+      _mockTestQuestionCountModel =
+      await mockTestQuestionRepo.getMockTestQuestionCount(data);
+
+      if (_mockTestQuestionCountModel?.success == true &&
+          _mockTestQuestionCountModel?.totalAvailable != null) {
+        _availableQuestions = _mockTestQuestionCountModel!.totalAvailable;
+      } else {
+        debugPrint("Failed to fetch question count or invalid response.");
+      }
+    } catch (e) {
+      debugPrint("Error fetching mock test question count: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners(); // Notify listeners after the process is complete
+    }
+  }
   void setNumberOfQuestion(double value) {
     _numberOfQuestions = value.toInt();
     if (kDebugMode) {
@@ -124,88 +172,38 @@ class CreateMockTestProvider with ChangeNotifier {
   List<Map<String, dynamic>> get questionsToPost => _questionsToPost;
 
   void submitAnswer(BuildContext context, int index) {
-    if (_selectedOptions.isNotEmpty &&
-        index < _selectedOptions.length &&
-        _selectedOptions[index] != null) {
-      if (_isSubmitted.isNotEmpty &&
-          index >= 0 &&
-          index < _isSubmitted.length) {
+    if (_selectedOptions.isNotEmpty && index < _selectedOptions.length && _selectedOptions[index] != null) {
+      if (_isSubmitted.isNotEmpty && index >= 0 && index < _isSubmitted.length) {
         _isSubmitted[index] = true;
-      } else {
-        debugPrint('Index out of bounds while submitting answer');
       }
 
       if (_questionList.isNotEmpty && index < _questionList.length) {
-        String correctAnswerKey =
-            _questionList[index].correctAnswer!.toLowerCase();
+        final question = _questionList[index];
+        String correctAnswerKey = question.correctAnswer!.toLowerCase();
         int? correctAnswerIndex = correctOptionMapping[correctAnswerKey];
         _correctAnswerOptionIndex![index] = correctAnswerIndex!;
-        String result = (_selectedOptions[index] == correctAnswerIndex)
-            ? "correct"
-            : "incorrect";
+        bool isCorrect = (_selectedOptions[index] == correctAnswerIndex);
 
-        if (_selectedOptions[index] == correctAnswerIndex) {
+        if (isCorrect) {
           _correctAns++;
-          // addToSubmittedQuestions(
-          //     _questionList[index].id, "correct", _selectedOptions[index]!);
           _isTrue![index] = true;
         } else {
           _incorrectAns++;
-          // addToSubmittedQuestions(
-          //     _questionList[index].id, "incorrect", _selectedOptions[index]!);
           _isTrue![index] = false;
         }
-        int? questionId = _questionList[index].id;
 
-        // bool existsInHive = false;
-        String? questionResult;
-        //   for (var question in box.values) {
-        //     if (question.questionId == questionId) {
-        //       existsInHive = true;
-        //       questionResult = question.questionResult;
-        //       break;
-        //     }
-        //   }
-        //
-        //   if (existsInHive) {
-        //     bool existsInList =
-        //         _questionsToPost.any((q) => q['question_id'] == questionId);
-        //
-        //     if (!existsInList) {
-        //       _questionsToPost.add({
-        //         'question_id': questionId,
-        //         'question_result': questionResult ?? '',
-        //         "question_status": "Mock"
-        //       });
-        //     }
-        //   }
-        //   bool exists =
-        //       _questionsToPost.any((q) => q['question_id'] == questionId);
-        //
-        //   if (exists) {
-        //     _questionsToPost.firstWhere(
-        //             (q) => q['question_id'] == questionId)['question_result'] =
-        //         result;
-        //   } else {
-        //     _questionsToPost.add({
-        //       'question_id': questionId,
-        //       'question_result': result,
-        //       "question_status": "Mock"
-        //     });
-        //   }
-        // }
-        // print('data of questions is =>>>> $questionsToPost');
-        //
-        // for (int i = 0; i < _questionList.length; i++) {
-        //   bool isSubmittedInHive =
-        //       isQuestionAlreadySubmitted(_questionList[i].id);
-        //   if (isSubmittedInHive) {
-        //     _isSubmitted[i] = true;
-        //   }
-        // }
+        // Add question data in the required format for API submission
+        _questionsToPost.add({
+          'question_id': question.id,
+          'question_result': isCorrect ? "correct" : "incorrect",
+          'question_status': "submitted",
+          'question_text': question.question,
+          'selected_option': _selectedOptions[index],
+          'correct_option': correctAnswerIndex,
+        });
 
-        bool allSubmitted =
-            _isSubmitted.every((submitted) => submitted == true);
+        // Check if all questions are submitted
+        bool allSubmitted = _isSubmitted.every((submitted) => submitted == true);
         print("allSubmitted ===> $allSubmitted");
 
         if (allSubmitted) {
@@ -216,8 +214,8 @@ class CreateMockTestProvider with ChangeNotifier {
               arguments: {
                 'correctAns': _correctAns,
                 'incorrectAns': _incorrectAns,
-                'totalQuestion': _numberOfQuestions,
-                'questions': _questionsToPost
+                'totalQuestions': _numberOfQuestions,
+                'questions': _questionsToPost, // Pass the full questions data
               },
             );
           });
@@ -233,57 +231,6 @@ class CreateMockTestProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // void addToSubmittedQuestions(
-  //     int? questionId, String questionResult, int selectedOption) {
-  //   var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
-  //
-  //   var question = SubmittedQuestionsModel(
-  //     questionId: questionId ?? -1,
-  //     questionResult: questionResult,
-  //     selectedOption: selectedOption,
-  //   );
-  //   print(
-  //       'question id =$questionId question result $questionResult selected option $selectedOption');
-  //
-  //   box.add(question);
-  // }
-
-  // int? getStoredSelectedOption(int questionId) {
-  //   var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
-  //   var storedQuestion = box.values.firstWhere(
-  //     (question) => question.questionId == questionId,
-  //     orElse: () => SubmittedQuestionsModel(
-  //         questionId: -1, questionResult: "", selectedOption: -1),
-  //   );
-  //
-  //   return storedQuestion.questionId == -1
-  //       ? null
-  //       : storedQuestion.selectedOption;
-  // }
-
-  // void clearSubmittedQuestions() {
-  //   var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
-  //   box.clear();
-  //   print("All submitted questions cleared.");
-  // }
-
-  // bool isQuestionAlreadySubmitted(int? questionId) {
-  //   var box = Hive.box<SubmittedQuestionsModel>('submittedQuestionsBox');
-  //
-  //   return box.values.any((question) => question.questionId == questionId);
-  // }
-
-  // void addNoteWithKey(int key, String title, String detail) {
-  //   final box = Boxes.getData();
-  //   final note = NotesModel(title: title, description: detail);
-  //   box.put(key, note);
-  // }
-
-  // void removeNoteByKey(int key) {
-  //   final box = Boxes.getData();
-  //   box.delete(key);
-  // }
 
   void goBack(context) {
     _questionsToPost = [];

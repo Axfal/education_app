@@ -7,7 +7,7 @@ class PostTestResultRepository {
       Map<String, dynamic> data) async {
     try {
       final response =
-          await _apiServices.getPostApiResponse(AppUrl.postResultResult, data);
+          await _apiServices.getPostApiResponse(AppUrl.postTestResult, data);
       return PostTestResultModel.fromJson(response);
     } catch (error) {
       debugPrint('Error fetching questions: $error');

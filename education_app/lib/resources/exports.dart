@@ -6,7 +6,6 @@ export 'package:hive/hive.dart';
 export 'package:education_app/model/hive_database_model/hive_db_models.dart';
 export 'package:education_app/model/hive_database_model/note_model.dart';
 export 'package:google_fonts/google_fonts.dart';
-export 'package:education_app/view_model/provider/create_mock_test_provider.dart';
 export 'package:education_app/view_model/provider/feedback_provider.dart';
 export 'model/user_session_model.dart';
 export 'package:education_app/model/feedback_model.dart';

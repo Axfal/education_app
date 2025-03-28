@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title: Text('Eduka', style: AppTextStyle.appBarText),
+        title: Text('ThinkMatte', style: AppTextStyle.appBarText),
         centerTitle: true,
       ),
       drawer: userData?.profileModel != null
@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                                 color: Colors.red, fontWeight: FontWeight.bold),
                           ),
-                        Text('Welcome to Eduka',
+                        Text('Welcome to ThinkMatte',
                             style: AppTextStyle.profileSubTitleText),
                       ],
                     ),

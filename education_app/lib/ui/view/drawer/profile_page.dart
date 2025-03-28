@@ -54,13 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       body: Container(
         height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(color: AppColors.primaryColor
-            // gradient: LinearGradient(
-            //   colors: [Colors.blueAccent, Colors.indigo],
-            //   begin: Alignment.topCenter,
-            //   end: Alignment.bottomCenter,
-            // ),
-            ),
+        decoration: BoxDecoration(color: AppColors.primaryColor),
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -130,8 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon:
-                Icon(Icons.arrow_back_outlined, color: Colors.white, size: 28),
+            icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           ),
         ),
         Center(
@@ -161,7 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
               backgroundColor: Colors.white,
               child: CircleAvatar(
                 radius: 20,
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: AppColors.primaryColor,
                 child: Icon(Icons.edit, color: Colors.white, size: 18),
               ),
             ),
@@ -180,7 +173,7 @@ class _ProfilePageState extends State<ProfilePage> {
         enabled: isEditable,
         keyboardType: keyboardType,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.blueAccent),
+          prefixIcon: Icon(icon, color: AppColors.primaryColor),
           hintText: hint,
           filled: true,
           fillColor: Colors.white,
@@ -202,14 +195,14 @@ class _ProfilePageState extends State<ProfilePage> {
         controller: controller,
         obscureText: obscureText,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.blueAccent),
+          prefixIcon: Icon(icon, color: AppColors.primaryColor),
           hintText: hint,
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           suffixIcon: IconButton(
             icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.blueAccent),
+                color: AppColors.primaryColor),
             onPressed: toggleVisibility,
           ),
         ),

@@ -38,7 +38,7 @@ class CheckQuestionRepo {
       int userId, int testId, int subjectId, int chapterId) async {
     try {
       final response = await _apiServices.getGetApiResponse(
-          "${AppUrl.unCheckQuestion}$userId&test_id=$testId&subject_id=$subjectId&chapter_id=$chapterId");
+          "${AppUrl.getCheckQuestion}$userId&test_id=$testId&subject_id=$subjectId&chapter_id=$chapterId");
       return GetCheckedQuestionModel.fromJson(response);
     } catch (error, stackTrace) {
       debugPrint('Error while checking questions: $error');
